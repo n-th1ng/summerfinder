@@ -11,9 +11,14 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function BoredPage() {
-  const activities = await prisma.activity.findMany({
-    where: { isActive: true, isApproved: true },
-  });
+  let activities: Awaited<ReturnType<typeof prisma.activity.findMany>> = [];
+  try {
+    activities = await prisma.activity.findMany({
+      where: { isActive: true, isApproved: true },
+    });
+  } catch {
+    activities = [];
+  }
 
   const decoded = activities.map((a) => ({
     id: a.id,

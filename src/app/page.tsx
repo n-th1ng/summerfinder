@@ -2,44 +2,48 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ActivityCard } from '@/components/ActivityCard';
 import { prisma } from '@/lib/prisma';
-import { rankActivities } from '@/lib/scoring';
+import { rankActivities, type ScoredActivity } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const featured = await prisma.activity.findMany({
-    where: { isActive: true, isApproved: true },
-    take: 8,
-  });
-
-  const decoded = featured.map((a) => ({
-    id: a.id,
-    title: a.title,
-    description: a.description,
-    category: a.category,
-    ageMin: a.ageMin,
-    ageMax: a.ageMax,
-    locationType: a.locationType,
-    city: a.city,
-    cost: a.cost,
-    duration: a.duration,
-    indoorOutdoor: a.indoorOutdoor,
-    skillLevel: a.skillLevel,
-    tags: JSON.parse(a.tags) as string[],
-    sourceUrl: a.sourceUrl,
-    providerName: a.providerName,
-  }));
-
-  const ranked = rankActivities(decoded, {
-    interests: ['coding', 'sports', 'art', 'science'],
-    mood: 'creative',
-    preference: 'both',
-    budget: 'free',
-    timeCommitment: 'multi-day',
-    skillLevel: 'beginner',
-    ageGroup: '14-16',
-    location: 'anywhere',
-  }).slice(0, 6);
+  let ranked: ScoredActivity[] = [];
+  try {
+    const featured = await prisma.activity.findMany({
+      where: { isActive: true, isApproved: true },
+      take: 8,
+    });
+    const decoded = featured.map((a) => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      category: a.category,
+      ageMin: a.ageMin,
+      ageMax: a.ageMax,
+      locationType: a.locationType,
+      city: a.city,
+      cost: a.cost,
+      duration: a.duration,
+      indoorOutdoor: a.indoorOutdoor,
+      skillLevel: a.skillLevel,
+      tags: JSON.parse(a.tags) as string[],
+      sourceUrl: a.sourceUrl,
+      providerName: a.providerName,
+    }));
+    ranked = rankActivities(decoded, {
+      interests: ['coding', 'sports', 'art', 'science'],
+      mood: 'creative',
+      preference: 'both',
+      budget: 'free',
+      timeCommitment: 'multi-day',
+      skillLevel: 'beginner',
+      ageGroup: '14-16',
+      location: 'anywhere',
+    }).slice(0, 6);
+  } catch {
+    // DB not configured yet — show empty state, rest of page still renders.
+    ranked = [];
+  }
 
   return (
     <div>
@@ -88,11 +92,21 @@ export default async function HomePage() {
             Get personalized picks →
           </Link>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ranked.map((a, i) => (
-            <ActivityCard key={a.id} activity={a} index={i} compact />
-          ))}
-        </div>
+        {ranked.length === 0 ? (
+          <div className="card p-6 text-center text-stone-600 dark:text-stone-400">
+            <p className="font-medium">No activities loaded yet.</p>
+            <p className="text-sm mt-1">
+              Configure <code>DATABASE_URL</code> on Vercel and run{' '}
+              <code>npm run setup</code> locally to seed the catalog.
+            </p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ranked.map((a, i) => (
+              <ActivityCard key={a.id} activity={a} index={i} compact />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* How it works */}

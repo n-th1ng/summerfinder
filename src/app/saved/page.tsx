@@ -13,11 +13,16 @@ export const dynamic = 'force-dynamic';
 
 export default async function SavedPage() {
   const sessionId = getOrCreateSessionId();
-  const items = await prisma.savedItem.findMany({
-    where: { sessionId },
-    include: { activity: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  let items: Awaited<ReturnType<typeof prisma.savedItem.findMany>> = [];
+  try {
+    items = await prisma.savedItem.findMany({
+      where: { sessionId },
+      include: { activity: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch {
+    items = [];
+  }
 
   const valid = items
     .filter((i) => i.activity && i.activity.isActive)
