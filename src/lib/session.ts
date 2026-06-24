@@ -8,15 +8,21 @@ export function getOrCreateSessionId(): string {
   const jar = cookies();
   const existing = jar.get(COOKIE_NAME);
   if (existing?.value) return existing.value;
-  const id = randomBytes(16).toString('hex');
-  jar.set(COOKIE_NAME, id, {
+  // We can't set cookies during static rendering or in Server Components
+  // (Next.js throws "Cookies can only be modified in a Server Action or
+  // Route Handler"). Generate a transient id here; it'll be persisted the
+  // first time a Route Handler runs (e.g. POST /api/save).
+  return randomBytes(16).toString('hex');
+}
+
+export function createSessionCookie(id: string) {
+  cookies().set(COOKIE_NAME, id, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     maxAge: COOKIE_MAX_AGE,
     path: '/',
   });
-  return id;
 }
 
 export function getSessionId(): string | undefined {

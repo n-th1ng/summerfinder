@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ok, fail } from '@/lib/api';
-import { getOrCreateSessionId } from '@/lib/session';
+import { getOrCreateSessionId, createSessionCookie } from '@/lib/session';
 import type { QuizAnswers } from '@/lib/quiz-config';
 import { rankActivities, type ScoredActivity } from '@/lib/scoring';
 
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
   }
 
   const sessionId = getOrCreateSessionId();
+  createSessionCookie(sessionId);
 
   // Privacy: store ONLY quiz answers, linked to anonymous session.
   // We also store the userCity supplied at submit time (used only for ranking),

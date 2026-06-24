@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ok, fail } from '@/lib/api';
-import { getOrCreateSessionId } from '@/lib/session';
+import { getOrCreateSessionId, createSessionCookie } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   if (!exists) return fail('Activity not found', 404);
 
   const sessionId = getOrCreateSessionId();
+  createSessionCookie(sessionId);
 
   const saved = await prisma.savedItem.upsert({
     where: { sessionId_activityId: { sessionId, activityId: body.activityId } },
@@ -37,6 +38,7 @@ export async function DELETE(req: Request) {
   if (!activityId) return fail('activityId required');
 
   const sessionId = getOrCreateSessionId();
+  createSessionCookie(sessionId);
   await prisma.savedItem.deleteMany({ where: { sessionId, activityId } });
   return ok({ saved: false });
 }
