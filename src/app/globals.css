@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 255 247 237;
+  --bg-soft: 255 255 255;
+  --fg: 28 25 23;
+  --muted: 120 113 108;
+  --border: 231 229 228;
+  --brand: 249 115 22;
+  --brand-fg: 255 255 255;
+}
+
+.dark {
+  --bg: 12 10 9;
+  --bg-soft: 28 25 23;
+  --fg: 250 250 249;
+  --muted: 168 162 158;
+  --border: 68 64 60;
+  --brand: 251 146 60;
+  --brand-fg: 12 10 9;
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tap-friendly focus rings */
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 3px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* Brand gradient text helper */
+.brand-gradient {
+  background-image: linear-gradient(90deg, #fb923c 0%, #facc15 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Card surface */
+.card {
+  background: rgb(var(--bg-soft));
+  border: 1px solid rgb(var(--border));
+  border-radius: 1rem;
+}
+
+/* Big touch targets */
+.touch {
+  min-height: 56px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: rgb(var(--brand));
+  color: rgb(var(--brand-fg));
+  padding: 0.5rem 1rem;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Animated gradient background for hero */
+.hero-bg {
+  background:
+    radial-gradient(800px 400px at 10% -10%, rgba(251, 146, 60, 0.25), transparent 60%),
+    radial-gradient(600px 400px at 90% 0%, rgba(56, 189, 248, 0.25), transparent 60%),
+    radial-gradient(800px 400px at 50% 110%, rgba(250, 204, 21, 0.2), transparent 60%);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,142 @@
+// SummerFinder — Prisma schema (Postgres / Supabase)
+//
+// Privacy-first design: the Users table ONLY stores name + location,
+// nothing else. Quiz responses are linked by a separate anonymous
+// session id, never back to a real identity.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  // The ONLY personal fields we keep: a display name and a location.
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  createdAt DateTime @default(now())
+
+  quizResponses QuizResponse[]
+  savedItems    SavedItem[]
+  submissions   AdminSubmission[]
+}
+
+model QuizResponse {
+  id             String   @id @default(cuid())
+  sessionId      String   // anonymous session cookie id
+  userId         String?
+  ageGroup       String
+  city           String
+  timeCommitment String
+  budget         String
+  preference     String
+  mood           String
+  interests      String   // JSON array of tag slugs
+  skillLevel     String
+  createdAt      DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model Source {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  url          String
+  contactEmail String?
+  createdAt    DateTime   @default(now())
+
+  activities   Activity[]
+  submissions  AdminSubmission[]
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  ageMin        Int
+  ageMax        Int
+  locationType  String   // "global" | "national" | "city" | "near_me"
+  city          String?  // nullable; required when locationType is "city"
+  timezone      String?
+  cost          String   // "free" | "low" | "paid"
+  duration      String   // "30min" | "1-2hr" | "half-day" | "multi-day" | "ongoing"
+  indoorOutdoor String   // "indoor" | "outdoor" | "both"
+  skillLevel    String   // "beginner" | "intermediate" | "advanced" | "any"
+  tags          String   // JSON array of tag slugs
+  sourceUrl     String?
+  providerName  String?
+  isActive      Boolean  @default(true)
+  isApproved    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sourceId String?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  savedItems   SavedItem[]
+  submissions  AdminSubmission[]
+
+  @@index([category])
+  @@index([isActive, isApproved])
+  @@index([locationType, city])
+}
+
+model ActivityTag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  group     String   // "interest" | "mood" | "category"
+  createdAt DateTime @default(now())
+}
+
+model SavedItem {
+  id         String   @id @default(cuid())
+  userId     String?
+  sessionId  String   // anonymous session cookie id
+  activityId String
+  createdAt  DateTime @default(now())
+
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, activityId])
+  @@index([sessionId])
+}
+
+model AdminSubmission {
+  id          String   @id @default(cuid())
+  activityId  String?
+  submitterName  String
+  submitterLocation String
+  payload     String   // raw JSON
+  status      String   @default("pending") // "pending" | "approved" | "rejected"
+  createdAt   DateTime @default(now())
+  decidedAt   DateTime?
+
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  sourceId String?
+  source   Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  userId   String?
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model UsageEvent {
+  id        String   @id @default(cuid())
+  kind      String   // "quiz_submit" | "recommendation_view" | "save" | "detail_view"
+  payload   String?  // JSON blob with non-PII counters
+  sessionId String
+  createdAt DateTime @default(now())
+
+  @@index([kind])
+  @@index([createdAt])
+}
