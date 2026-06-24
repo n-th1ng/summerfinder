@@ -11,15 +11,22 @@ import { SavedRow } from '@/components/SavedRow';
 
 export const dynamic = 'force-dynamic';
 
+function getItems(sessionId: string) {
+  return prisma.savedItem.findMany({
+    where: { sessionId },
+    include: { activity: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export default async function SavedPage() {
   const sessionId = getOrCreateSessionId();
-  let items: Awaited<ReturnType<typeof prisma.savedItem.findMany>> = [];
+  type SavedWithActivity = Awaited<
+    ReturnType<typeof getItems>
+  >[number];
+  let items: SavedWithActivity[] = [];
   try {
-    items = await prisma.savedItem.findMany({
-      where: { sessionId },
-      include: { activity: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    items = await getItems(sessionId);
   } catch {
     items = [];
   }
