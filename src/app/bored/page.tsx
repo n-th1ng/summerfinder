@@ -3,10 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/Button';
 import { ActivityCard } from '@/components/ActivityCard';
 import {
-  CATEGORY_LABELS,
-  DURATION_LABELS,
   type ScoredActivity,
 } from '@/lib/scoring';
+import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,9 +37,6 @@ export default async function BoredPage() {
     providerName: a.providerName,
   }));
 
-  const boring = decoded.filter((a) => a.category === 'boredom_buster' || a.duration === '30min');
-
-  // Surprise me picks (a tiny spread of categories, deterministic shuffle by date)
   const day = new Date().toISOString().slice(0, 10);
   const seed = Array.from(day).reduce((a, c) => a + c.charCodeAt(0), 0);
   const shuffled = decoded
@@ -48,55 +44,52 @@ export default async function BoredPage() {
     .sort((a, b) => a.k - b.k)
     .map((x) => x.v);
 
-  const surprise = shuffled.slice(0, 3).map((a) => ({
-    ...a,
-    score: 90,
-    reasons: ['Surprise pick for today'],
-  })) as ScoredActivity[];
-
-  const boredomPicks = boring.slice(0, 4).map((a) => ({
-    ...a,
-    score: 85,
-    reasons: ['Quick boredom buster'],
-  })) as ScoredActivity[];
+  const surprise = shuffled.slice(0, 3).map((a) => ({ ...a, score: 90, reasons: ['Surprise pick for today'] })) as ScoredActivity[];
+  const boring = decoded.filter((a) => a.category === 'boredom_buster' || a.duration === '30min');
+  const boredomPicks = boring.slice(0, 4).map((a) => ({ ...a, score: 85, reasons: ['Quick boredom buster'] })) as ScoredActivity[];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="text-center">
-        <div className="text-5xl" aria-hidden>✨</div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold mt-2">
-          Surprise me — let’s fix this fast.
-        </h1>
-        <p className="mt-2 text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
-          Three hand-picked ideas for today, plus a few boredom-busters. No quiz,
-          no setup.
+    <div className="container py-10 sm:py-14">
+      <div className="text-center max-w-xl mx-auto">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-coral-500 to-magenta-500 text-white shadow-glow animate-float">
+          <Icon name="sparkles" size={28} />
+        </div>
+        <h1 className="mt-5 text-display-xl">Let&apos;s fix this fast.</h1>
+        <p className="mt-3 text-ink-600 dark:text-ink-400">
+          Three hand-picked ideas for today, plus a few boredom-busters. No quiz, no setup.
         </p>
-        <div className="mt-4 flex justify-center gap-2">
-          <Link href="/quiz"><Button variant="secondary">Take the full quiz →</Button></Link>
-          <Link href="/agent"><Button variant="ghost">Ask the agent 🤖</Button></Link>
+        <div className="mt-6 flex justify-center gap-2 flex-wrap">
+          <Link href="/quiz"><Button variant="secondary" iconRight="arrowRight">Take the full quiz</Button></Link>
+          <Link href="/agent"><Button variant="ghost" iconLeft="wand">Ask the agent</Button></Link>
         </div>
       </div>
 
-      <section className="mt-10">
-        <h2 className="text-xl font-bold mb-3">🎁 Surprise picks for today</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {surprise.map((a, i) => (
-            <ActivityCard key={a.id} activity={a} index={i} />
-          ))}
-        </div>
-      </section>
+      {surprise.length > 0 && (
+        <section className="mt-14">
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-display-md">Surprise picks for today</h2>
+            <span className="text-xs text-ink-500">Refreshes daily</span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+            {surprise.map((a, i) => <ActivityCard key={a.id} activity={a} index={i} />)}
+          </div>
+        </section>
+      )}
 
-      <section className="mt-10">
-        <h2 className="text-xl font-bold mb-3">⚡ 30-minute boredom busters</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {boredomPicks.map((a, i) => (
-            <ActivityCard key={a.id} activity={a} index={i} compact />
-          ))}
-        </div>
-      </section>
+      {boredomPicks.length > 0 && (
+        <section className="mt-14">
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-display-md">30-minute boredom busters</h2>
+            <span className="text-xs text-ink-500">{boredomPicks.length} quick wins</span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+            {boredomPicks.map((a, i) => <ActivityCard key={a.id} activity={a} index={i} />)}
+          </div>
+        </section>
+      )}
 
-      <p className="mt-8 text-center text-sm text-stone-500 dark:text-stone-400">
-        Picks change every day. Bookmark your favorites from any activity page.
+      <p className="mt-12 text-center text-sm text-ink-500 inline-flex items-center gap-1.5 w-full justify-center">
+        <Icon name="bookmark" size={13} /> Bookmark favorites from any activity page.
       </p>
     </div>
   );

@@ -280,17 +280,17 @@ export const LOCATION_LABELS: Record<string, string> = {
   near_me: 'Near you',
 };
 
-export const INTEREST_LABELS: Record<string, { label: string; emoji: string }> = {
-  sports: { label: 'Sports', emoji: '⚽' },
-  coding: { label: 'Coding', emoji: '💻' },
-  art: { label: 'Art', emoji: '🖌️' },
-  reading: { label: 'Reading', emoji: '📖' },
-  business: { label: 'Business', emoji: '💼' },
-  volunteering: { label: 'Volunteering', emoji: '🤝' },
-  gaming: { label: 'Gaming', emoji: '🎮' },
-  fitness: { label: 'Fitness', emoji: '💪' },
-  music: { label: 'Music', emoji: '🎵' },
-  science: { label: 'Science', emoji: '🔬' },
-  clubs: { label: 'Clubs', emoji: '🧩' },
-  courses: { label: 'Courses', emoji: '🎓' },
+export const INTEREST_LABELS: Record<string, { label: string; icon: string; tone: 'coral'|'sky'|'lime'|'magenta'|'ink' }> = {
+  sports: { label: 'Sports', icon: 'target', tone: 'coral' },
+  coding: { label: 'Coding', icon: 'code', tone: 'sky' },
+  art: { label: 'Art', icon: 'palette', tone: 'magenta' },
+  reading: { label: 'Reading', icon: 'bookOpen', tone: 'ink' },
+  business: { label: 'Business', icon: 'briefcase', tone: 'ink' },
+  volunteering: { label: 'Volunteering', icon: 'handshake', tone: 'lime' },
+  gaming: { label: 'Gaming', icon: 'gamepad', tone: 'magenta' },
+  fitness: { label: 'Fitness', icon: 'dumbbell', tone: 'coral' },
+  music: { label: 'Music', icon: 'music', tone: 'magenta' },
+  science: { label: 'Science', icon: 'flask', tone: 'sky' },
+  clubs: { label: 'Clubs', icon: 'puzzle', tone: 'lime' },
+  courses: { label: 'Courses', icon: 'graduation', tone: 'sky' },
 };

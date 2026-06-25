@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Icon } from '@/components/Icon';
 
-export function SaveButton({ activityId }: { activityId: string }) {
+export function SaveButton({ activityId, fullWidth }: { activityId: string; fullWidth?: boolean }) {
   const [saved, setSaved] = useState<boolean | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -41,15 +42,22 @@ export function SaveButton({ activityId }: { activityId: string }) {
     }
   }
 
-  const label = saved === null ? '…' : saved ? '★ Saved' : '☆ Save';
+  const label = saved === null ? 'Loading…' : saved ? 'Saved' : 'Save';
+  const icon = saved === null ? 'clock' : saved ? 'bookmarkFilled' : 'bookmark';
 
   return (
     <button
       type="button"
       onClick={toggle}
       disabled={pending || saved === null}
-      className="inline-flex items-center justify-center h-12 px-5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 font-semibold"
+      aria-pressed={saved ?? undefined}
+      className={`inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full font-semibold transition active:scale-95 ${
+        saved
+          ? 'bg-coral-500 text-white hover:bg-coral-600 shadow-soft'
+          : 'bg-white text-ink-900 ring-1 ring-inset ring-ink-200 hover:bg-ink-50 hover:ring-ink-300 dark:bg-ink-800 dark:text-ink-100 dark:ring-ink-700 dark:hover:bg-ink-700'
+      } ${fullWidth ? 'w-full' : ''}`}
     >
+      <Icon name={icon as any} size={16} />
       {label}
     </button>
   );

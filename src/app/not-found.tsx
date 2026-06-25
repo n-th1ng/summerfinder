@@ -1,18 +1,19 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/Icon';
 
 export default function NotFound() {
   return (
-    <div className="max-w-xl mx-auto px-4 py-20 text-center">
-      <div className="text-6xl" aria-hidden>🧭</div>
-      <h1 className="text-3xl font-bold mt-3">We couldn’t find that.</h1>
-      <p className="text-stone-600 dark:text-stone-400 mt-2">
-        The activity or page may have been removed.
+    <div className="container py-20 text-center max-w-xl mx-auto">
+      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-coral-50 dark:bg-coral-500/15 text-coral-500 mb-5 animate-float">
+        <Icon name="compass" size={36} />
+      </div>
+      <h1 className="text-display-lg">We couldn&apos;t find that.</h1>
+      <p className="mt-3 text-ink-600 dark:text-ink-400">
+        The activity or page may have been removed, or never existed.
       </p>
-      <Link
-        href="/"
-        className="mt-6 inline-flex items-center justify-center h-12 px-6 rounded-2xl bg-brand-500 text-white font-semibold hover:bg-brand-600"
-      >
-        Take me home
+      <Link href="/" className="mt-6 inline-block">
+        <Button size="lg" iconRight="arrowRight">Take me home</Button>
       </Link>
     </div>
   );

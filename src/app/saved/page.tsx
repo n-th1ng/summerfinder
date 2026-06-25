@@ -8,6 +8,8 @@ import {
   type ScoredActivity,
 } from '@/lib/scoring';
 import { SavedRow } from '@/components/SavedRow';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,28 +45,33 @@ export default async function SavedPage() {
     }));
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold">Saved activities</h1>
-      <p className="text-stone-600 dark:text-stone-400 mt-1">
-        Your bookmarks live on this device. {valid.length} saved.
-      </p>
+    <div className="container py-10 sm:py-14">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-8">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-coral-600 dark:text-coral-400 font-semibold">Your bookmarks</p>
+          <h1 className="mt-1 text-display-lg">Saved activities</h1>
+          <p className="mt-2 text-ink-600 dark:text-ink-400">
+            <span className="font-semibold text-ink-900 dark:text-ink-100">{valid.length}</span> saved · stored on this device.
+          </p>
+        </div>
+        <Link href="/quiz"><Button iconLeft="rocket">Take the quiz</Button></Link>
+      </div>
 
       {valid.length === 0 ? (
-        <div className="card p-8 mt-6 text-center">
-          <div className="text-5xl" aria-hidden>🔖</div>
-          <p className="mt-3 font-semibold">Nothing saved yet</p>
-          <p className="text-sm text-stone-600 dark:text-stone-400">
-            Take the quiz and tap “Save” on any activity you like.
+        <div className="card p-12 text-center max-w-xl mx-auto">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-coral-50 dark:bg-coral-500/15 text-coral-500 mb-4">
+            <Icon name="bookmark" size={28} />
+          </div>
+          <p className="font-bold text-xl">Nothing saved yet</p>
+          <p className="mt-2 text-ink-600 dark:text-ink-400 max-w-sm mx-auto">
+            Take the quiz and tap the bookmark on any activity you like.
           </p>
-          <Link
-            href="/quiz"
-            className="mt-4 inline-flex items-center justify-center h-11 px-5 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600"
-          >
-            Start the quiz →
+          <Link href="/quiz" className="mt-5 inline-block">
+            <Button size="lg" iconRight="arrowRight">Start the quiz</Button>
           </Link>
         </div>
       ) : (
-        <ul className="mt-6 space-y-3">
+        <ul className="grid sm:grid-cols-2 gap-3 stagger">
           {valid.map((i) => (
             <SavedRow
               key={i.id}

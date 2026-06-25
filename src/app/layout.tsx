@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Logo } from '@/components/Logo';
+import { Icon } from '@/components/Icon';
 
 export const metadata: Metadata = {
   title: 'SummerFinder — Bored this summer? Find something better to do.',
@@ -27,8 +29,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fff7ed' },
-    { media: '(prefers-color-scheme: dark)', color: '#0c0a09' },
+    { media: '(prefers-color-scheme: light)', color: '#FFFCF8' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090D' },
   ],
 };
 
@@ -52,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col antialiased">
         <a className="skip-link" href="#main">Skip to content</a>
         <SiteHeader />
         <main id="main" className="flex-1">{children}</main>
@@ -64,16 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 backdrop-blur bg-white/70 dark:bg-stone-950/70 border-b border-stone-200 dark:border-stone-800">
-      <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <span aria-hidden className="text-2xl">☀️</span>
-          <span>SummerFinder</span>
-        </Link>
-        <div className="flex items-center gap-1 text-sm">
-          <Link href="/saved" className="touch rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800">Saved</Link>
-          <Link href="/submit" className="touch rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800">Submit</Link>
-          <Link href="/admin" className="hidden sm:inline-flex touch rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800">Admin</Link>
+    <header className="sticky top-0 z-30 backdrop-blur-xl bg-white/70 dark:bg-ink-950/70 border-b border-ink-100 dark:border-ink-800">
+      <nav className="container h-16 flex items-center justify-between">
+        <Logo />
+        <div className="flex items-center gap-1.5">
+          <NavLink href="/saved" icon="bookmark">Saved</NavLink>
+          <NavLink href="/submit" icon="plusCircle" className="hidden sm:inline-flex">Submit</NavLink>
+          <NavLink href="/admin" icon="shield" className="hidden md:inline-flex">Admin</NavLink>
           <ThemeToggle />
         </div>
       </nav>
@@ -81,19 +80,62 @@ function SiteHeader() {
   );
 }
 
+function NavLink({
+  href,
+  icon,
+  children,
+  className = '',
+}: {
+  href: string;
+  icon: 'bookmark' | 'plusCircle' | 'shield';
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-1.5 h-10 px-3 rounded-full text-sm font-semibold text-ink-700 hover:bg-ink-100 transition dark:text-ink-200 dark:hover:bg-ink-800 ${className}`}
+    >
+      <Icon name={icon} size={15} />
+      <span>{children}</span>
+    </Link>
+  );
+}
+
 function SiteFooter() {
   return (
-    <footer className="border-t border-stone-200 dark:border-stone-800 mt-12">
-      <div className="max-w-5xl mx-auto px-4 py-8 text-sm text-stone-600 dark:text-stone-400 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-semibold">SummerFinder</p>
-          <p>Built for students ages 10–18. Privacy-first.</p>
+    <footer className="border-t border-ink-100 dark:border-ink-800 mt-20 bg-ink-50/50 dark:bg-ink-900/40">
+      <div className="container py-12">
+        <div className="grid sm:grid-cols-3 gap-8">
+          <div>
+            <Logo />
+            <p className="mt-3 text-sm text-ink-600 dark:text-ink-400 max-w-xs">
+              A 60-second quiz that recommends summer activities for students.
+              Privacy-first, made for ages 10–18.
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-ink-500 mb-3">Product</p>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/quiz" className="text-ink-700 dark:text-ink-200 hover:underline">Take the quiz</Link></li>
+              <li><Link href="/bored" className="text-ink-700 dark:text-ink-200 hover:underline">I'm bored</Link></li>
+              <li><Link href="/saved" className="text-ink-700 dark:text-ink-200 hover:underline">Saved activities</Link></li>
+              <li><Link href="/agent" className="text-ink-700 dark:text-ink-200 hover:underline">Ask the agent</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-ink-500 mb-3">Company</p>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/submit" className="text-ink-700 dark:text-ink-200 hover:underline">Submit an activity</Link></li>
+              <li><Link href="/privacy" className="text-ink-700 dark:text-ink-200 hover:underline">Privacy</Link></li>
+              <li><Link href="/terms" className="text-ink-700 dark:text-ink-200 hover:underline">Terms</Link></li>
+              <li><Link href="/admin" className="text-ink-700 dark:text-ink-200 hover:underline">Admin</Link></li>
+            </ul>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          <Link href="/privacy" className="hover:underline">Privacy</Link>
-          <Link href="/terms" className="hover:underline">Terms</Link>
-          <Link href="/submit" className="hover:underline">Submit an activity</Link>
-          <Link href="/admin" className="hover:underline">Admin</Link>
+        <div className="mt-10 pt-6 border-t border-ink-100 dark:border-ink-800 flex flex-wrap items-center justify-between gap-3 text-xs text-ink-500">
+          <p>© {new Date().getFullYear()} SummerFinder. Built with care.</p>
+          <p className="inline-flex items-center gap-1.5"><Icon name="shield" size={12} /> Privacy-first by design</p>
         </div>
       </div>
     </footer>

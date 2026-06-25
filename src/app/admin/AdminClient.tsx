@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Icon, type IconName } from '@/components/Icon';
 
 type Stats = {
   stats: { total: number; approved: number; pending: number; saves: number; quizzes: number };
@@ -17,6 +20,12 @@ type Submission = {
   createdAt: string;
   payload: string;
   activity: { id: string; title: string } | null;
+};
+
+const STATUS_TONE: Record<string, 'success' | 'danger' | 'ink'> = {
+  approved: 'success',
+  rejected: 'danger',
+  pending: 'ink',
 };
 
 export default function AdminClient() {
@@ -53,9 +62,7 @@ export default function AdminClient() {
     const ok = await loadAll(passcode);
     if (ok) {
       setAuthed(true);
-      try {
-        sessionStorage.setItem('sf-admin-pass', passcode);
-      } catch {}
+      try { sessionStorage.setItem('sf-admin-pass', passcode); } catch {}
     }
   }
 
@@ -63,17 +70,14 @@ export default function AdminClient() {
     const saved = sessionStorage.getItem('sf-admin-pass');
     if (saved) {
       setPasscode(saved);
-      loadAll(saved).then((ok) => {
-        if (ok) setAuthed(true);
-      });
+      loadAll(saved).then((ok) => { if (ok) setAuthed(true); });
     }
   }, []);
 
   async function decide(id: string, status: 'approved' | 'rejected' | 'pending') {
     const headers = { 'Content-Type': 'application/json', 'x-admin-passcode': passcode };
     const res = await fetch('/api/admin/submissions', {
-      method: 'PATCH',
-      headers,
+      method: 'PATCH', headers,
       body: JSON.stringify({ id, status }),
     });
     if (res.ok) {
@@ -82,38 +86,29 @@ export default function AdminClient() {
     }
   }
 
-  async function toggleActive(id: string, isActive: boolean) {
-    const headers = { 'Content-Type': 'application/json', 'x-admin-passcode': passcode };
-    await fetch(`/api/admin/activity/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ isActive }),
-    });
-    loadAll(passcode);
-  }
-
   if (!authed) {
     return (
-      <form onSubmit={tryLogin} className="card p-6 max-w-md mx-auto mt-10 space-y-3">
-        <h1 className="text-2xl font-bold">Admin sign-in</h1>
-        <p className="text-sm text-stone-500">
-          Set <code>ADMIN_PASSCODE</code> in <code>.env</code>. Default is{' '}
-          <code>letmein</code> for local development.
+      <form onSubmit={tryLogin} className="card p-7 max-w-md mx-auto mt-10 shadow-lift space-y-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-coral-50 dark:bg-coral-500/15 text-coral-500">
+          <Icon name="lock" size={22} />
+        </div>
+        <h2 className="text-xl font-bold">Admin sign-in</h2>
+        <p className="text-sm text-ink-600 dark:text-ink-400">
+          Set <code className="px-1 rounded bg-ink-100 dark:bg-ink-800">ADMIN_PASSCODE</code> in <code className="px-1 rounded bg-ink-100 dark:bg-ink-800">.env</code>. Default is <code className="px-1 rounded bg-ink-100 dark:bg-ink-800">letmein</code> for local dev.
         </p>
         <input
           type="password"
           value={passcode}
           onChange={(e) => setPasscode(e.target.value)}
           placeholder="Passcode"
-          className="w-full h-12 rounded-xl bg-stone-100 dark:bg-stone-800 px-3"
+          className="w-full h-12 rounded-full bg-ink-100 dark:bg-ink-800 px-4 focus:outline-none focus:ring-2 focus:ring-coral-400"
         />
-        <button
-          type="submit"
-          className="w-full h-12 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600"
-        >
-          Sign in
-        </button>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <Button type="submit" fullWidth size="lg" iconRight="arrowRight">Sign in</Button>
+        {error && (
+          <p className="text-sm text-red-600 inline-flex items-center gap-1.5">
+            <Icon name="close" size={14} /> {error}
+          </p>
+        )}
       </form>
     );
   }
@@ -121,47 +116,40 @@ export default function AdminClient() {
   return (
     <div className="space-y-8">
       {stats && (
-        <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <Stat label="Activities" value={stats.stats.total} />
-          <Stat label="Approved" value={stats.stats.approved} />
-          <Stat label="Pending submissions" value={stats.stats.pending} />
-          <Stat label="Saves" value={stats.stats.saves} />
-          <Stat label="Quizzes" value={stats.stats.quizzes} />
+        <section className="grid grid-cols-2 sm:grid-cols-5 gap-3 stagger">
+          <Stat icon="zap" label="Activities" value={stats.stats.total} />
+          <Stat icon="check" label="Approved" value={stats.stats.approved} />
+          <Stat icon="send" label="Pending" value={stats.stats.pending} />
+          <Stat icon="bookmark" label="Saves" value={stats.stats.saves} />
+          <Stat icon="target" label="Quizzes" value={stats.stats.quizzes} />
         </section>
       )}
 
       {stats && (
         <section className="grid sm:grid-cols-2 gap-4">
-          <div className="card p-4">
-            <h2 className="font-bold mb-2">Top interests picked</h2>
-            <ul className="space-y-1.5">
-              {stats.topTags.length === 0 && (
-                <li className="text-sm text-stone-500">No data yet.</li>
-              )}
+          <div className="card p-5 shadow-soft">
+            <h2 className="font-bold mb-3 inline-flex items-center gap-2"><Icon name="flame" size={16} /> Top interests</h2>
+            <ul className="space-y-2">
+              {stats.topTags.length === 0 && <li className="text-sm text-ink-500">No data yet.</li>}
               {stats.topTags.map(([tag, count]) => (
                 <li key={tag} className="flex items-center gap-2 text-sm">
-                  <span className="font-medium w-32">{tag}</span>
-                  <div className="flex-1 h-2 rounded-full bg-stone-100 dark:bg-stone-800">
-                    <div
-                      className="h-full rounded-full bg-brand-500"
-                      style={{ width: `${Math.min(100, count * 8)}%` }}
-                    />
+                  <span className="font-semibold w-32 capitalize">{tag}</span>
+                  <div className="flex-1 h-2 rounded-full bg-ink-100 dark:bg-ink-800">
+                    <div className="h-full rounded-full bg-gradient-to-r from-coral-500 to-magenta-500" style={{ width: `${Math.min(100, count * 8)}%` }} />
                   </div>
-                  <span className="tabular-nums text-stone-500 w-8 text-right">{count}</span>
+                  <span className="tabular-nums text-ink-500 w-8 text-right">{count}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="card p-4">
-            <h2 className="font-bold mb-2">Most saved</h2>
-            <ul className="space-y-1.5 text-sm">
-              {stats.topSaved.length === 0 && (
-                <li className="text-stone-500">No data yet.</li>
-              )}
+          <div className="card p-5 shadow-soft">
+            <h2 className="font-bold mb-3 inline-flex items-center gap-2"><Icon name="trophy" size={16} /> Most saved</h2>
+            <ul className="space-y-2 text-sm">
+              {stats.topSaved.length === 0 && <li className="text-ink-500">No data yet.</li>}
               {stats.topSaved.map((s) => (
-                <li key={s.id} className="flex justify-between gap-3">
+                <li key={s.id} className="flex justify-between gap-3 py-1.5 border-b border-ink-100 dark:border-ink-800 last:border-0">
                   <span className="truncate">{s.title ?? '(deleted)'}</span>
-                  <span className="tabular-nums text-stone-500">{s.count}</span>
+                  <span className="tabular-nums font-semibold">{s.count}</span>
                 </li>
               ))}
             </ul>
@@ -170,65 +158,39 @@ export default function AdminClient() {
       )}
 
       <section>
-        <h2 className="font-bold mb-2">Submissions</h2>
+        <h2 className="font-bold mb-3 inline-flex items-center gap-2"><Icon name="send" size={16} /> Submissions</h2>
         <div className="space-y-3">
-          {subs.length === 0 && <p className="text-sm text-stone-500">No submissions yet.</p>}
+          {subs.length === 0 && <p className="text-sm text-ink-500">No submissions yet.</p>}
           {subs.map((s) => {
             let payload: any = {};
-            try {
-              payload = JSON.parse(s.payload);
-            } catch {}
+            try { payload = JSON.parse(s.payload); } catch {}
             return (
-              <article key={s.id} className="card p-4">
+              <article key={s.id} className="card p-5 shadow-soft">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold">{payload.title || '(untitled)'}</p>
-                    <p className="text-xs text-stone-500">
-                      from {s.submitterName} in {s.submitterLocation} ·{' '}
+                    <p className="font-bold">{payload.title || '(untitled)'}</p>
+                    <p className="text-xs text-ink-500 inline-flex items-center gap-1.5">
+                      <Icon name="user" size={12} /> {s.submitterName}
+                      <span aria-hidden>·</span>
+                      <Icon name="mapPin" size={12} /> {s.submitterLocation}
+                      <span aria-hidden>·</span>
                       {new Date(s.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      s.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : s.status === 'rejected'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {s.status}
-                  </span>
+                  <Badge tone={STATUS_TONE[s.status] ?? 'ink'}>{s.status}</Badge>
                 </div>
                 {payload.description && (
-                  <p className="text-sm text-stone-600 dark:text-stone-400 mt-2 line-clamp-3">
-                    {payload.description}
-                  </p>
+                  <p className="text-sm text-ink-600 dark:text-ink-400 mt-3 line-clamp-3">{payload.description}</p>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   {s.status !== 'approved' && (
-                    <button
-                      onClick={() => decide(s.id, 'approved')}
-                      className="h-10 px-4 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600"
-                    >
-                      Approve
-                    </button>
+                    <Button size="sm" variant="lime" iconLeft="check" onClick={() => decide(s.id, 'approved')}>Approve</Button>
                   )}
                   {s.status !== 'rejected' && (
-                    <button
-                      onClick={() => decide(s.id, 'rejected')}
-                      className="h-10 px-4 rounded-xl bg-stone-200 dark:bg-stone-800 text-sm font-semibold hover:bg-stone-300 dark:hover:bg-stone-700"
-                    >
-                      Reject
-                    </button>
+                    <Button size="sm" variant="secondary" onClick={() => decide(s.id, 'rejected')}>Reject</Button>
                   )}
                   {s.status !== 'pending' && (
-                    <button
-                      onClick={() => decide(s.id, 'pending')}
-                      className="h-10 px-4 rounded-xl bg-stone-200 dark:bg-stone-800 text-sm font-semibold hover:bg-stone-300 dark:hover:bg-stone-700"
-                    >
-                      Mark pending
-                    </button>
+                    <Button size="sm" variant="ghost" onClick={() => decide(s.id, 'pending')}>Mark pending</Button>
                   )}
                 </div>
               </article>
@@ -239,36 +201,34 @@ export default function AdminClient() {
 
       {stats && (
         <section>
-          <h2 className="font-bold mb-2">Recent activity</h2>
-          <div className="card divide-y divide-stone-200 dark:divide-stone-800">
-            {stats.recentEvents.length === 0 && (
-              <p className="p-4 text-sm text-stone-500">No events yet.</p>
-            )}
+          <h2 className="font-bold mb-3 inline-flex items-center gap-2"><Icon name="zap" size={16} /> Recent events</h2>
+          <div className="card divide-y divide-ink-100 dark:divide-ink-800 shadow-soft overflow-hidden">
+            {stats.recentEvents.length === 0 && <p className="p-4 text-sm text-ink-500">No events yet.</p>}
             {stats.recentEvents.slice(0, 12).map((e) => (
               <div key={e.id} className="p-3 text-sm flex justify-between gap-2">
                 <span className="font-mono text-xs">{e.kind}</span>
-                <span className="text-stone-500">
-                  {new Date(e.createdAt).toLocaleString()}
-                </span>
+                <span className="text-ink-500">{new Date(e.createdAt).toLocaleString()}</span>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      <p className="text-xs text-stone-500">
-        Tip: use the API endpoints directly with <code>x-admin-passcode</code> for
-        full CRUD on activities.
+      <p className="text-xs text-ink-500">
+        Tip: hit the API endpoints directly with <code className="px-1 rounded bg-ink-100 dark:bg-ink-800">x-admin-passcode</code> for full activity CRUD.
       </p>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ icon, label, value }: { icon: IconName; label: string; value: number }) {
   return (
-    <div className="card p-4">
-      <p className="text-xs uppercase tracking-wider text-stone-500">{label}</p>
-      <p className="text-3xl font-extrabold mt-1 tabular-nums">{value}</p>
+    <div className="card p-4 shadow-soft">
+      <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-coral-50 dark:bg-coral-500/15 text-coral-500 mb-2">
+        <Icon name={icon} size={16} />
+      </div>
+      <p className="text-xs uppercase tracking-wider text-ink-500">{label}</p>
+      <p className="text-3xl font-extrabold tabular-nums mt-1">{value}</p>
     </div>
   );
 }
