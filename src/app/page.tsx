@@ -60,6 +60,7 @@ export default async function HomePage() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden bg-mesh">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden />
         <div className="bg-dots absolute inset-0 opacity-60" aria-hidden />
         <div className="container relative pt-12 pb-16 sm:pt-20 sm:pb-28">
           <div className="max-w-3xl">

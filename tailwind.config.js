@@ -69,11 +69,11 @@ module.exports = {
         display: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       fontSize: {
-        'display-2xl': ['clamp(3rem, 6vw + 0.5rem, 5.25rem)', { lineHeight: '1.02', letterSpacing: '-0.04em', fontWeight: '800' }],
-        'display-xl': ['clamp(2.25rem, 4vw + 0.75rem, 4rem)', { lineHeight: '1.04', letterSpacing: '-0.035em', fontWeight: '800' }],
-        'display-lg': ['clamp(1.875rem, 2.5vw + 0.75rem, 3rem)', { lineHeight: '1.08', letterSpacing: '-0.03em', fontWeight: '700' }],
-        'display-md': ['clamp(1.5rem, 1.5vw + 0.75rem, 2.125rem)', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'display-sm': ['clamp(1.25rem, 0.5vw + 1rem, 1.5rem)', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'display-2xl': ['clamp(2.25rem, 4.5vw + 0.5rem, 4.5rem)', { lineHeight: '1.02', letterSpacing: '-0.035em', fontWeight: '800' }],
+        'display-xl': ['clamp(2rem, 3.5vw + 0.5rem, 3.5rem)', { lineHeight: '1.04', letterSpacing: '-0.03em', fontWeight: '800' }],
+        'display-lg': ['clamp(1.75rem, 2.5vw + 0.5rem, 2.75rem)', { lineHeight: '1.08', letterSpacing: '-0.025em', fontWeight: '700' }],
+        'display-md': ['clamp(1.375rem, 1.5vw + 0.5rem, 2rem)', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-sm': ['clamp(1.125rem, 0.5vw + 1rem, 1.375rem)', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
       },
       borderRadius: {
         '4xl': '2rem',
