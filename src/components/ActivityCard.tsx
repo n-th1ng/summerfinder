@@ -11,6 +11,7 @@ import {
   SKILL_LABELS,
   INTEREST_LABELS,
 } from '@/lib/scoring';
+import { getActivityLink } from '@/lib/activity-link';
 import { Icon, type IconName } from '@/components/Icon';
 
 const CATEGORY_ACCENT: Record<string, { bg: string; ring: string; icon: IconName; tone: 'coral'|'sky'|'lime'|'magenta'|'ink' }> = {
@@ -89,6 +90,21 @@ export function ActivityCard({
           </p>
         )}
 
+        {!compact && (() => {
+          const link = getActivityLink(activity);
+          if (!link.isSearch) return null;
+          return (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-ink-500 dark:text-ink-400">
+              <Icon name="search" size={11} />
+              <span>
+                {activity.city
+                  ? `We'll search "${activity.title.replace(/\s*\(.*?\)/, '')}" in ${activity.city.split(',')[0]}`
+                  : "We'll search Google for this near you"}
+              </span>
+            </p>
+          );
+        })()}
+
         {activity.reasons.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-1.5">
             {activity.reasons.slice(0, 2).map((r) => (
@@ -133,25 +149,21 @@ export function ActivityCard({
           >
             <Icon name={saved ? 'bookmarkFilled' : 'bookmark'} size={15} />
           </button>
-          {activity.sourceUrl ? (
-            <a
-              href={activity.sourceUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-coral-500 text-white text-xs font-semibold hover:bg-coral-600 shadow-soft"
-            >
-              Open <Icon name="arrowUpRight" size={12} />
-            </a>
-          ) : (
-            <Link
-              href={`/activity/${activity.id}`}
-              aria-label="Open activity"
-              className="inline-flex items-center justify-center h-9 px-3 rounded-full bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
-            >
-              Open <Icon name="arrowRight" size={13} className="ml-1" />
-            </Link>
-          )}
+          {(() => {
+            const link = getActivityLink(activity);
+            return (
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-coral-500 text-white text-xs font-semibold hover:bg-coral-600 shadow-soft"
+                title={link.label}
+              >
+                {link.isSearch ? 'Search' : 'Open'} <Icon name="arrowUpRight" size={12} />
+              </a>
+            );
+          })()}
           <Link
             href={`/activity/${activity.id}`}
             aria-label="View details"

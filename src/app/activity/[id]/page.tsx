@@ -11,6 +11,7 @@ import {
 } from '@/lib/scoring';
 import { SEED_ACTIVITIES } from '@/lib/seed-data';
 import { seedActivityById, toResolvedSeed } from '@/lib/seed-helpers';
+import { getActivityLink } from '@/lib/activity-link';
 import { SaveButton } from '@/components/SaveButton';
 import { Icon, type IconName } from '@/components/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -128,18 +129,20 @@ export default async function ActivityPage({ params }: { params: { id: string } 
 
           <h1 className="mt-4 text-display-2xl tracking-tight">{a.title}</h1>
 
-          {/* Primary CTA — goes to source if available, else "search" */}
-          {a.sourceUrl && (
-            <a
-              href={a.sourceUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-6 inline-flex items-center gap-2 h-14 px-6 rounded-full bg-coral-500 text-white text-base font-bold hover:bg-coral-600 shadow-soft active:scale-[0.98] transition"
-            >
-              <Icon name="arrowUpRight" size={18} />
-              Open {a.providerName ?? 'source site'}
-            </a>
-          )}
+          {(() => {
+            const link = getActivityLink(a);
+            return (
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-6 inline-flex items-center gap-2 h-14 px-6 rounded-full bg-coral-500 text-white text-base font-bold hover:bg-coral-600 shadow-soft active:scale-[0.98] transition"
+              >
+                <Icon name={link.isSearch ? 'search' : 'arrowUpRight'} size={18} />
+                {link.label}
+              </a>
+            );
+          })()}
 
           <p className="mt-5 text-lg text-ink-700 dark:text-ink-300 leading-relaxed whitespace-pre-line">
             {a.description}
@@ -148,16 +151,19 @@ export default async function ActivityPage({ params }: { params: { id: string } 
           {/* Mobile actions */}
           <div className="mt-8 flex flex-wrap items-center gap-3 lg:hidden">
             <SaveButton activityId={a.id} />
-            {a.sourceUrl && (
-              <a
-                href={a.sourceUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-ink-900 text-white font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
-              >
-                Visit source <Icon name="externalLink" size={15} className="ml-2" />
-              </a>
-            )}
+            {(() => {
+              const link = getActivityLink(a);
+              return (
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-ink-900 text-white font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
+                >
+                  {link.label} <Icon name="externalLink" size={15} className="ml-2" />
+                </a>
+              );
+            })()}
           </div>
         </div>
 
@@ -175,16 +181,19 @@ export default async function ActivityPage({ params }: { params: { id: string } 
             </dl>
 
             <div className="mt-5 pt-5 border-t border-ink-100 dark:border-ink-800 hidden lg:flex flex-col gap-2">
-              {a.sourceUrl && (
-                <a
-                  href={a.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft"
-                >
-                  Open source site <Icon name="externalLink" size={15} className="ml-2" />
-                </a>
-              )}
+              {(() => {
+                const link = getActivityLink(a);
+                return (
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft"
+                  >
+                    {link.label} <Icon name="externalLink" size={15} className="ml-2" />
+                  </a>
+                );
+              })()}
               <SaveButton activityId={a.id} fullWidth />
               {a.providerName && (
                 <p className="text-center text-xs text-ink-500 mt-1">Provided by {a.providerName}</p>
