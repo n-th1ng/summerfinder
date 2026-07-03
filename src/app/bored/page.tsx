@@ -5,18 +5,35 @@ import { ActivityCard } from '@/components/ActivityCard';
 import {
   type ScoredActivity,
 } from '@/lib/scoring';
+import { SEED_ACTIVITIES } from '@/lib/seed-data';
 import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
 export default async function BoredPage() {
-  let activities: Awaited<ReturnType<typeof prisma.activity.findMany>> = [];
+  let activities: any[] = [];
   try {
     activities = await prisma.activity.findMany({
       where: { isActive: true, isApproved: true },
     });
   } catch {
-    activities = [];
+    activities = SEED_ACTIVITIES.map((a, i) => ({
+      id: `seed-${i}-${a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)}`,
+      title: a.title,
+      description: a.description,
+      category: a.category,
+      ageMin: a.ageMin,
+      ageMax: a.ageMax,
+      locationType: a.locationType,
+      city: a.city ?? null,
+      cost: a.cost,
+      duration: a.duration,
+      indoorOutdoor: a.indoorOutdoor,
+      skillLevel: a.skillLevel,
+      tags: JSON.stringify(a.tags),
+      sourceUrl: a.sourceUrl ?? null,
+      providerName: a.providerName ?? null,
+    }));
   }
 
   const decoded = activities.map((a) => ({
@@ -26,13 +43,13 @@ export default async function BoredPage() {
     category: a.category,
     ageMin: a.ageMin,
     ageMax: a.ageMax,
-    locationType: a.locationType,
+    locationType: a.locationType as any,
     city: a.city,
-    cost: a.cost,
-    duration: a.duration,
-    indoorOutdoor: a.indoorOutdoor,
-    skillLevel: a.skillLevel,
-    tags: JSON.parse(a.tags) as string[],
+    cost: a.cost as any,
+    duration: a.duration as any,
+    indoorOutdoor: a.indoorOutdoor as any,
+    skillLevel: a.skillLevel as any,
+    tags: (typeof a.tags === 'string' ? JSON.parse(a.tags) : a.tags) as string[],
     sourceUrl: a.sourceUrl,
     providerName: a.providerName,
   }));

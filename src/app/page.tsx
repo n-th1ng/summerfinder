@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { rankActivities, type ScoredActivity } from '@/lib/scoring';
+import { SEED_ACTIVITIES } from '@/lib/seed-data';
 import { Button } from '@/components/ui/Button';
 import { ActivityCard } from '@/components/ActivityCard';
 import { Badge } from '@/components/ui/Badge';
@@ -12,12 +13,39 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   let ranked: ScoredActivity[] = [];
   let totalCount = 0;
+  let source: 'database' | 'seed' = 'seed';
+
+  let featured: any[] = [];
   try {
-    const featured = await prisma.activity.findMany({
+    featured = await prisma.activity.findMany({
       where: { isActive: true, isApproved: true },
       take: 12,
     });
     totalCount = await prisma.activity.count({ where: { isActive: true, isApproved: true } });
+    source = 'database';
+  } catch {
+    // DB unavailable \u2014 use static seed
+    featured = SEED_ACTIVITIES.slice(0, 12).map((a, i) => ({
+      id: `seed-${i}-${a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)}`,
+      title: a.title,
+      description: a.description,
+      category: a.category,
+      ageMin: a.ageMin,
+      ageMax: a.ageMax,
+      locationType: a.locationType,
+      city: a.city ?? null,
+      cost: a.cost,
+      duration: a.duration,
+      indoorOutdoor: a.indoorOutdoor,
+      skillLevel: a.skillLevel,
+      tags: JSON.stringify(a.tags),
+      sourceUrl: a.sourceUrl ?? null,
+      providerName: a.providerName ?? null,
+    }));
+    totalCount = SEED_ACTIVITIES.length;
+  }
+
+  try {
     const decoded = featured.map((a) => ({
       id: a.id,
       title: a.title,
@@ -25,13 +53,13 @@ export default async function HomePage() {
       category: a.category,
       ageMin: a.ageMin,
       ageMax: a.ageMax,
-      locationType: a.locationType,
+      locationType: a.locationType as any,
       city: a.city,
-      cost: a.cost,
-      duration: a.duration,
-      indoorOutdoor: a.indoorOutdoor,
-      skillLevel: a.skillLevel,
-      tags: JSON.parse(a.tags) as string[],
+      cost: a.cost as any,
+      duration: a.duration as any,
+      indoorOutdoor: a.indoorOutdoor as any,
+      skillLevel: a.skillLevel as any,
+      tags: (typeof a.tags === 'string' ? JSON.parse(a.tags) : a.tags) as string[],
       sourceUrl: a.sourceUrl,
       providerName: a.providerName,
     }));

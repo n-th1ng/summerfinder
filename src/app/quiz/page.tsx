@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Icon, type IconName } from '@/components/Icon';
+import { LocationButton, type ResolvedLocation } from '@/components/LocationButton';
 import { QUIZ_QUESTIONS, type QuizAnswers, type QuizOption } from '@/lib/quiz-config';
 
 const STORAGE_KEY = 'sf-quiz';
+const CITY_KEY = 'sf-quiz-city';
 
 const OPTION_ICONS: Record<string, IconName> = {
   '10-12': 'sparkles', '12-14': 'star', '14-16': 'zap', '16-18': 'rocket',
@@ -23,24 +25,30 @@ const OPTION_ICONS: Record<string, IconName> = {
   beginner: 'leaf', intermediate: 'mountain', advanced: 'rocket',
 };
 
+type City = ResolvedLocation | null;
+
 export default function QuizPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
+  const [city, setCity] = useState<City>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) setAnswers(JSON.parse(raw));
+      const c = sessionStorage.getItem(CITY_KEY);
+      if (c) setCity(JSON.parse(c));
     } catch {}
   }, []);
 
   useEffect(() => {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+      if (city) sessionStorage.setItem(CITY_KEY, JSON.stringify(city));
     } catch {}
-  }, [answers]);
+  }, [answers, city]);
 
   const total = QUIZ_QUESTIONS.length;
   const progress = useMemo(() => ((step + 1) / total) * 100, [step, total]);
@@ -55,13 +63,32 @@ export default function QuizPage() {
     ? Array.isArray(currentValue) && currentValue.length > 0
     : Boolean(currentValue);
 
+  function handleLocationResolved(loc: ResolvedLocation) {
+    setCity(loc);
+    // If the user is on the location step, auto-advance after a beat.
+    if (current.id === 'location') {
+      setAnswer('near_me');
+      setTimeout(() => next(), 600);
+    }
+  }
+
   async function submit() {
     setSubmitting(true);
     try {
+      const payload: any = { ...answers };
+      if (city) {
+        payload.userCity = city.city;
+        payload.userLocation = [city.city, city.region, city.country].filter(Boolean).join(', ');
+        payload.userLat = city.latitude;
+        payload.userLng = city.longitude;
+        if (!answers.location || answers.location === 'near_me') {
+          payload.location = 'near_me';
+        }
+      }
       const res = await fetch('/api/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(answers),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.ok) {
@@ -91,6 +118,9 @@ export default function QuizPage() {
     setAnswer(cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
   }
 
+  // The location step gets a custom layout with the LocationButton.
+  const isLocationStep = current.id === 'location';
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col">
       {/* Top bar */}
@@ -116,7 +146,33 @@ export default function QuizPage() {
             <p className="mt-3 text-center text-ink-600 dark:text-ink-300 max-w-xl mx-auto">{current.subtitle}</p>
           )}
 
-          <div className={`mt-10 grid gap-3 sm:gap-4 ${
+          {isLocationStep && (
+            <div className="mt-8">
+              <LocationButton
+                onResolved={handleLocationResolved}
+                initialCity={city?.city}
+              />
+              {city && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-400/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-400/30 px-3 py-1.5 text-sm font-semibold">
+                  <Icon name="check" size={14} />
+                  {city.city}
+                  {city.region ? `, ${city.region}` : ''}
+                  {city.country ? `, ${city.country}` : ''}
+                </div>
+              )}
+              <div className="mt-8 flex items-center gap-3">
+                <div className="flex-1 h-px bg-ink-200 dark:bg-ink-700" />
+                <span className="text-xs uppercase tracking-wider text-ink-500 dark:text-ink-400 font-semibold">
+                  or pick a region
+                </span>
+                <div className="flex-1 h-px bg-ink-200 dark:bg-ink-700" />
+              </div>
+            </div>
+          )}
+
+          <div className={`grid gap-3 sm:gap-4 ${
+            isLocationStep ? 'mt-4' : 'mt-10'
+          } ${
             current.multi || current.options.length > 6
               ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
               : 'grid-cols-2 sm:grid-cols-3'
@@ -143,7 +199,7 @@ export default function QuizPage() {
             Back
           </Button>
           <div className="flex-1 text-center text-xs text-ink-500 dark:text-ink-400 hidden sm:block">
-            {current.multi ? 'Tap as many as you like' : 'Tap to choose'}
+            {current.multi ? 'Tap as many as you like' : isLocationStep ? 'Or skip and pick a region' : 'Tap to choose'}
           </div>
           <Button
             iconRight={step === total - 1 ? 'sparkles' : 'arrowRight'}
