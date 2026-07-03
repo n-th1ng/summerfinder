@@ -233,7 +233,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
       {/* MAIN GRID — equal columns, content fills both sides */}
       <article className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-8 items-start">
         {/* Main column — content-dense, fills the column */}
-        <div className="space-y-6 min-w-0">
+        <div className="space-y-5 min-w-0">
           {/* Description */}
           <section>
             <h2 className="text-display-sm mb-2">What it is</h2>
@@ -246,13 +246,13 @@ export default async function ActivityPage({ params }: { params: { id: string } 
           {reasons.length > 0 && (
             <section>
               <h2 className="text-display-sm mb-2">Why we picked this for you</h2>
-              <ul className="flex flex-wrap gap-2">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {reasons.map((r) => (
                   <li
                     key={r}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-400/10 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 px-3 py-1.5 text-sm font-medium text-emerald-900 dark:text-emerald-200"
+                    className="inline-flex items-start gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-400/10 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 px-3 py-2 text-sm text-emerald-900 dark:text-emerald-200"
                   >
-                    <Icon name="check" size={13} className="shrink-0" />
+                    <Icon name="check" size={13} className="shrink-0 mt-0.5" />
                     <span>{r}</span>
                   </li>
                 ))}
@@ -260,19 +260,19 @@ export default async function ActivityPage({ params }: { params: { id: string } 
             </section>
           )}
 
-          {/* What you'll do — tips */}
+          {/* What you'll do — tips as 3-col grid on desktop, stacked on mobile */}
           <section>
             <h2 className="text-display-sm mb-2">What you&apos;ll do</h2>
-            <ol className="space-y-2.5">
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {tips.map((t, i) => (
                 <li
                   key={i}
-                  className="flex items-start gap-3 rounded-2xl bg-ink-100/50 dark:bg-ink-800/40 ring-1 ring-inset ring-ink-200/60 dark:ring-ink-700/60 px-4 py-3"
+                  className="relative rounded-xl bg-ink-100/50 dark:bg-ink-800/40 ring-1 ring-inset ring-ink-200/50 dark:ring-ink-700/50 p-3.5"
                 >
-                  <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-coral-500 text-white text-xs font-bold mt-0.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral-500 text-white text-[10px] font-bold mb-1.5">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-ink-800 dark:text-ink-100 leading-relaxed">{t}</span>
+                  <p className="text-[13px] text-ink-700 dark:text-ink-200 leading-snug">{t}</p>
                 </li>
               ))}
             </ol>
