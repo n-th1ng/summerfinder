@@ -86,6 +86,74 @@ function inferReasons(a: Resolved): string[] {
   return reasons.slice(0, 4);
 }
 
+// Get activity-specific "What you'll do" tips. Pulled from the
+// category + title keywords so the section feels personal.
+function inferTips(a: Resolved): string[] {
+  const title = a.title.toLowerCase();
+  if (a.category === 'course') {
+    return [
+      'Set aside 30 minutes a day for the next few days.',
+      'Work through one module at a time. Skip around if you get bored.',
+      'Build something small at the end to prove it stuck.',
+    ];
+  }
+  if (a.category === 'sport' || a.category === 'outdoor') {
+    return [
+      'Bring water, sunscreen, and a buddy if you can.',
+      'Start slow \u2014 the first session is just to get out there.',
+      'Track your sessions so you can see progress over the summer.',
+    ];
+  }
+  if (a.category === 'volunteer') {
+    return [
+      'Email or call ahead to confirm the time and what to wear.',
+      'Bring a water bottle and a friend if the role allows it.',
+      'Ask the organizer what they need most so you can be useful.',
+    ];
+  }
+  if (a.category === 'event') {
+    return [
+      'Check the time and place the day before so you don\u2019t miss it.',
+      'Bring a phone for photos and a notebook if you want to remember details.',
+      'Show up 10 minutes early \u2014 events often have a sign-in line.',
+    ];
+  }
+  if (a.category === 'hobby' || a.category === 'boredom_buster') {
+    return [
+      'Gather the basic materials first \u2014 most activities need very little.',
+      'Don\u2019t aim for perfect on day one. Just start.',
+      'Share what you make with a friend or on social \u2014 it makes it stick.',
+    ];
+  }
+  if (a.category === 'self_study') {
+    return [
+      'Block a 30\u201360 minute window on your calendar.',
+      'Write down one question before you start \u2014 then answer it as you go.',
+      'Teach what you learn to a friend or sibling. That\u2019s the fastest way to know it.',
+    ];
+  }
+  if (a.category === 'academic') {
+    return [
+      'Skim the syllabus or overview first to know what you\u2019re building toward.',
+      'Do one problem or chapter a day rather than cramming.',
+      'Find a study buddy or online forum to keep momentum.',
+    ];
+  }
+  if (a.category === 'club') {
+    return [
+      'Show up to the first session even if you feel unsure.',
+      'Bring something you\u2019re already curious about \u2014 it gives you a reason to talk.',
+      'Commit to 3 sessions before deciding if it\u2019s for you.',
+    ];
+  }
+  // generic
+  return [
+    'Block out time on your calendar \u2014 specific times beat vague plans.',
+    'Tell a friend what you\u2019re doing so someone holds you accountable.',
+    'Reflect after a week: what worked, what didn\u2019t?',
+  ];
+}
+
 export default async function ActivityPage({ params }: { params: { id: string } }) {
   const a = await findActivity(params.id);
   if (!a) notFound();
@@ -93,6 +161,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
   const tags = a.tags;
   const accent = CATEGORY_ICON[a.category] ?? CATEGORY_ICON.hobby;
   const reasons = inferReasons(a);
+  const tips = inferTips(a);
   const link = getActivityLink(a);
 
   let related: Resolved[] = [];
@@ -162,12 +231,12 @@ export default async function ActivityPage({ params }: { params: { id: string } 
       </header>
 
       {/* MAIN GRID — equal columns, content fills both sides */}
-      <article className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
+      <article className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-8 items-start">
         {/* Main column — content-dense, fills the column */}
-        <div className="space-y-8 min-w-0">
+        <div className="space-y-6 min-w-0">
           {/* Description */}
           <section>
-            <h2 className="text-display-sm mb-3">What it is</h2>
+            <h2 className="text-display-sm mb-2">What it is</h2>
             <p className="text-base sm:text-lg text-ink-700 dark:text-ink-300 leading-relaxed">
               {a.description}
             </p>
@@ -176,14 +245,14 @@ export default async function ActivityPage({ params }: { params: { id: string } 
           {/* Why we picked this — reasons */}
           {reasons.length > 0 && (
             <section>
-              <h2 className="text-display-sm mb-3">Why we picked this for you</h2>
-              <ul className="grid sm:grid-cols-2 gap-2.5">
+              <h2 className="text-display-sm mb-2">Why we picked this for you</h2>
+              <ul className="flex flex-wrap gap-2">
                 {reasons.map((r) => (
                   <li
                     key={r}
-                    className="inline-flex items-start gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-400/10 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 px-3 py-2.5 text-sm text-emerald-900 dark:text-emerald-200"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-400/10 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 px-3 py-1.5 text-sm font-medium text-emerald-900 dark:text-emerald-200"
                   >
-                    <Icon name="check" size={14} className="shrink-0 mt-0.5" />
+                    <Icon name="check" size={13} className="shrink-0" />
                     <span>{r}</span>
                   </li>
                 ))}
@@ -191,9 +260,27 @@ export default async function ActivityPage({ params }: { params: { id: string } 
             </section>
           )}
 
+          {/* What you'll do — tips */}
+          <section>
+            <h2 className="text-display-sm mb-2">What you&apos;ll do</h2>
+            <ol className="space-y-2.5">
+              {tips.map((t, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 rounded-2xl bg-ink-100/50 dark:bg-ink-800/40 ring-1 ring-inset ring-ink-200/60 dark:ring-ink-700/60 px-4 py-3"
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-coral-500 text-white text-xs font-bold mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-ink-800 dark:text-ink-100 leading-relaxed">{t}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
           {/* At a glance — mobile/tablet view, desktop sees sidebar */}
           <section className="lg:hidden">
-            <h2 className="text-display-sm mb-3">At a glance</h2>
+            <h2 className="text-display-sm mb-2">At a glance</h2>
             <div className="card p-5">
               <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 <Stat icon="clock" label="Time" value={DURATION_LABELS[a.duration]} />
@@ -204,7 +291,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
                 {a.city && <Stat icon="mapPin" label="Where" value={a.city} />}
               </dl>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <SaveButton activityId={a.id} fullWidth />
             </div>
           </section>
@@ -212,7 +299,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
           {/* Tags (long list — fills more space) */}
           {tags.length > 0 && (
             <section>
-              <h2 className="text-display-sm mb-3">Tags</h2>
+              <h2 className="text-display-sm mb-2">Tags</h2>
               <ul className="flex flex-wrap gap-2">
                 {tags.map((t) => (
                   <li
