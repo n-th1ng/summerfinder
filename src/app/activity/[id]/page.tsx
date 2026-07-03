@@ -66,12 +66,34 @@ async function findActivity(id: string): Promise<Resolved | null> {
   return null;
 }
 
+// Get a fake match reason based on the activity's properties. The
+// real "reasons" array lives on the ScoredActivity from the quiz, but
+// the detail page works on a plain Resolved so we infer.
+function inferReasons(a: Resolved): string[] {
+  const reasons: string[] = [];
+  if (a.ageMin <= 12) reasons.push('Open to younger ages');
+  else if (a.ageMin <= 14) reasons.push('Great fit for ages 10\u201318');
+  else if (a.ageMin <= 16) reasons.push('Matches your age range');
+  else reasons.push('Right age bracket');
+  if (a.cost === 'free') reasons.push('Free to join');
+  if (a.indoorOutdoor === 'outdoor') reasons.push('Get outside');
+  if (a.indoorOutdoor === 'indoor') reasons.push('Indoor activity');
+  if (a.indoorOutdoor === 'both') reasons.push('Indoor or outdoor');
+  if (a.duration === '30min' || a.duration === '1-2hr') reasons.push('Quick to start');
+  if (a.duration === 'multi-day' || a.duration === 'ongoing') reasons.push('Ongoing activity');
+  if (a.skillLevel === 'beginner') reasons.push('Beginner-friendly');
+  if (a.skillLevel === 'advanced') reasons.push('Stretch your skills');
+  return reasons.slice(0, 4);
+}
+
 export default async function ActivityPage({ params }: { params: { id: string } }) {
   const a = await findActivity(params.id);
   if (!a) notFound();
 
   const tags = a.tags;
   const accent = CATEGORY_ICON[a.category] ?? CATEGORY_ICON.hobby;
+  const reasons = inferReasons(a);
+  const link = getActivityLink(a);
 
   let related: Resolved[] = [];
   try {
@@ -117,83 +139,119 @@ export default async function ActivityPage({ params }: { params: { id: string } 
         <Icon name="arrowLeft" size={14} /> Back to results
       </Link>
 
-      <article className="mt-4 grid lg:grid-cols-[1fr_340px] gap-6 lg:gap-10">
-        {/* Main column */}
-        <div className="animate-fade-up">
-          <div className="flex flex-wrap items-center gap-2">
+      {/* HEADER STRIP — title + CTA, stacks on mobile, inline on desktop */}
+      <header className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Badge tone={accent.tone} icon={accent.icon}>{CATEGORY_LABELS[a.category] ?? a.category}</Badge>
             {tags.slice(0, 4).map((t) => (
               <Badge key={t} tone="ink">{INTEREST_LABELS[t]?.label ?? t}</Badge>
             ))}
           </div>
+          <h1 className="text-display-2xl tracking-tight break-words">{a.title}</h1>
+        </div>
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="shrink-0 inline-flex items-center justify-center gap-2 h-12 lg:h-14 px-5 lg:px-6 rounded-full bg-coral-500 text-white text-sm lg:text-base font-bold hover:bg-coral-600 shadow-soft active:scale-[0.98] transition self-start"
+        >
+          <Icon name={link.isSearch ? 'search' : 'arrowUpRight'} size={18} />
+          <span>{link.label}</span>
+        </a>
+      </header>
 
-          <h1 className="mt-4 text-display-2xl tracking-tight">{a.title}</h1>
+      {/* MAIN GRID — equal columns, content fills both sides */}
+      <article className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
+        {/* Main column — content-dense, fills the column */}
+        <div className="space-y-8 min-w-0">
+          {/* Description */}
+          <section>
+            <h2 className="text-display-sm mb-3">What it is</h2>
+            <p className="text-base sm:text-lg text-ink-700 dark:text-ink-300 leading-relaxed">
+              {a.description}
+            </p>
+          </section>
 
-          {(() => {
-            const link = getActivityLink(a);
-            return (
+          {/* Why we picked this — reasons */}
+          {reasons.length > 0 && (
+            <section>
+              <h2 className="text-display-sm mb-3">Why we picked this for you</h2>
+              <ul className="grid sm:grid-cols-2 gap-2.5">
+                {reasons.map((r) => (
+                  <li
+                    key={r}
+                    className="inline-flex items-start gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-400/10 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 px-3 py-2.5 text-sm text-emerald-900 dark:text-emerald-200"
+                  >
+                    <Icon name="check" size={14} className="shrink-0 mt-0.5" />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* At a glance — mobile/tablet view, desktop sees sidebar */}
+          <section className="lg:hidden">
+            <h2 className="text-display-sm mb-3">At a glance</h2>
+            <div className="card p-5">
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                <Stat icon="clock" label="Time" value={DURATION_LABELS[a.duration]} />
+                <Stat icon="sparkles" label="Cost" value={COST_LABELS[a.cost]} />
+                <Stat icon="users" label="Ages" value={`${a.ageMin}–${a.ageMax}`} />
+                <Stat icon="target" label="Level" value={SKILL_LABELS[a.skillLevel]} />
+                <Stat icon={a.indoorOutdoor === 'outdoor' ? 'mountain' : a.indoorOutdoor === 'indoor' ? 'house' : 'shapes'} label="Vibe" value={INDOOR_OUTDOOR_LABELS[a.indoorOutdoor]} />
+                {a.city && <Stat icon="mapPin" label="Where" value={a.city} />}
+              </dl>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <SaveButton activityId={a.id} fullWidth />
+            </div>
+          </section>
+
+          {/* Tags (long list — fills more space) */}
+          {tags.length > 0 && (
+            <section>
+              <h2 className="text-display-sm mb-3">Tags</h2>
+              <ul className="flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <li
+                    key={t}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 dark:bg-ink-800 px-3 py-1.5 text-sm font-medium text-ink-700 dark:text-ink-200"
+                  >
+                    <Icon name="tag" size={12} />
+                    {INTEREST_LABELS[t]?.label ?? t}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+
+        {/* Sidebar — only visible on lg+, sticky */}
+        <aside className="hidden lg:block lg:sticky lg:top-24">
+          <div className="card p-5 shadow-lift space-y-4">
+            <div>
+              <h2 className="text-xs uppercase tracking-wider text-ink-500 font-semibold">At a glance</h2>
+              <dl className="mt-3 space-y-3 text-sm">
+                <Row icon="clock" label="Time" value={DURATION_LABELS[a.duration]} />
+                <Row icon="sparkles" label="Cost" value={COST_LABELS[a.cost]} />
+                <Row icon="users" label="Ages" value={`${a.ageMin}–${a.ageMax}`} />
+                <Row icon="target" label="Difficulty" value={SKILL_LABELS[a.skillLevel]} />
+                <Row icon={a.indoorOutdoor === 'outdoor' ? 'mountain' : a.indoorOutdoor === 'indoor' ? 'house' : 'shapes'} label="Vibe" value={INDOOR_OUTDOOR_LABELS[a.indoorOutdoor]} />
+                {a.city && <Row icon="mapPin" label="Where" value={a.city} />}
+              </dl>
+            </div>
+
+            <div className="pt-4 border-t border-ink-100 dark:border-ink-800 flex flex-col gap-2">
               <a
                 href={link.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-6 inline-flex items-center gap-2 h-14 px-6 rounded-full bg-coral-500 text-white text-base font-bold hover:bg-coral-600 shadow-soft active:scale-[0.98] transition"
+                className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft"
               >
-                <Icon name={link.isSearch ? 'search' : 'arrowUpRight'} size={18} />
-                {link.label}
+                {link.label} <Icon name="externalLink" size={15} className="ml-2" />
               </a>
-            );
-          })()}
-
-          <p className="mt-5 text-lg text-ink-700 dark:text-ink-300 leading-relaxed whitespace-pre-line">
-            {a.description}
-          </p>
-
-          {/* Mobile actions */}
-          <div className="mt-8 flex flex-wrap items-center gap-3 lg:hidden">
-            <SaveButton activityId={a.id} />
-            {(() => {
-              const link = getActivityLink(a);
-              return (
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-ink-900 text-white font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
-                >
-                  {link.label} <Icon name="externalLink" size={15} className="ml-2" />
-                </a>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="card p-5 shadow-lift animate-fade-up">
-            <h2 className="text-xs uppercase tracking-wider text-ink-500 font-semibold">At a glance</h2>
-            <dl className="mt-3 space-y-3 text-sm">
-              <Row icon="clock" label="Time" value={DURATION_LABELS[a.duration]} />
-              <Row icon="sparkles" label="Cost" value={COST_LABELS[a.cost]} />
-              <Row icon="users" label="Ages" value={`${a.ageMin}–${a.ageMax}`} />
-              <Row icon="target" label="Difficulty" value={SKILL_LABELS[a.skillLevel]} />
-              <Row icon={a.indoorOutdoor === 'outdoor' ? 'mountain' : a.indoorOutdoor === 'indoor' ? 'house' : 'shapes'} label="Vibe" value={INDOOR_OUTDOOR_LABELS[a.indoorOutdoor]} />
-              {a.city && <Row icon="mapPin" label="Where" value={a.city} />}
-            </dl>
-
-            <div className="mt-5 pt-5 border-t border-ink-100 dark:border-ink-800 hidden lg:flex flex-col gap-2">
-              {(() => {
-                const link = getActivityLink(a);
-                return (
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft"
-                  >
-                    {link.label} <Icon name="externalLink" size={15} className="ml-2" />
-                  </a>
-                );
-              })()}
               <SaveButton activityId={a.id} fullWidth />
               {a.providerName && (
                 <p className="text-center text-xs text-ink-500 mt-1">Provided by {a.providerName}</p>
@@ -211,7 +269,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
               See all →
             </Link>
           </div>
-          <div className="grid sm:grid-cols-3 gap-4 stagger">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
             {related.map((r) => (
               <Link
                 key={r.id}
@@ -243,6 +301,17 @@ function Row({ icon, label, value }: { icon: IconName; label: string; value: str
         <Icon name={icon} size={14} /> {label}
       </dt>
       <dd className="font-semibold text-right text-ink-900 dark:text-ink-100">{value}</dd>
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  return (
+    <div>
+      <dt className="inline-flex items-center gap-1.5 text-xs text-ink-500 mb-1">
+        <Icon name={icon} size={12} /> {label}
+      </dt>
+      <dd className="font-semibold text-ink-900 dark:text-ink-100">{value}</dd>
     </div>
   );
 }
