@@ -9,6 +9,8 @@ import {
   SKILL_LABELS,
   INTEREST_LABELS,
 } from '@/lib/scoring';
+import { SEED_ACTIVITIES } from '@/lib/seed-data';
+import { seedActivityById, toResolvedSeed } from '@/lib/seed-helpers';
 import { SaveButton } from '@/components/SaveButton';
 import { Icon, type IconName } from '@/components/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -28,21 +30,51 @@ const CATEGORY_ICON: Record<string, { icon: IconName; tone: 'coral'|'sky'|'lime'
   boredom_buster: { icon: 'sparkles', tone: 'magenta' },
 };
 
-export default async function ActivityPage({ params }: { params: { id: string } }) {
-  let a;
-  try {
-    a = await prisma.activity.findUnique({ where: { id: params.id } });
-  } catch {
-    a = null;
-  }
-  if (!a || !a.isActive || !a.isApproved) notFound();
+type Resolved = ReturnType<typeof toResolvedSeed>;
 
-  const tags = JSON.parse(a.tags) as string[];
+// Look up an activity by ID, with a fallback to the static seed catalog.
+async function findActivity(id: string): Promise<Resolved | null> {
+  // 1. Try the database first
+  try {
+    const a = await prisma.activity.findUnique({ where: { id } });
+    if (a && a.isActive && a.isApproved) {
+      return {
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        category: a.category,
+        ageMin: a.ageMin,
+        ageMax: a.ageMax,
+        locationType: a.locationType as any,
+        city: a.city,
+        cost: a.cost as any,
+        duration: a.duration as any,
+        indoorOutdoor: a.indoorOutdoor as any,
+        skillLevel: a.skillLevel as any,
+        tags: JSON.parse(a.tags) as string[],
+        sourceUrl: a.sourceUrl,
+        providerName: a.providerName,
+      };
+    }
+  } catch {
+    // fall through to seed
+  }
+  // 2. Try the static seed by id
+  const seed = seedActivityById(id);
+  if (seed) return toResolvedSeed(seed);
+  return null;
+}
+
+export default async function ActivityPage({ params }: { params: { id: string } }) {
+  const a = await findActivity(params.id);
+  if (!a) notFound();
+
+  const tags = a.tags;
   const accent = CATEGORY_ICON[a.category] ?? CATEGORY_ICON.hobby;
 
-  let related: Awaited<ReturnType<typeof prisma.activity.findMany>> = [];
+  let related: Resolved[] = [];
   try {
-    related = await prisma.activity.findMany({
+    const dbRelated = await prisma.activity.findMany({
       where: {
         isActive: true,
         isApproved: true,
@@ -51,7 +83,32 @@ export default async function ActivityPage({ params }: { params: { id: string } 
       },
       take: 3,
     });
+    related = dbRelated.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      category: r.category,
+      ageMin: r.ageMin,
+      ageMax: r.ageMax,
+      locationType: r.locationType,
+      city: r.city,
+      cost: r.cost,
+      duration: r.duration,
+      indoorOutdoor: r.indoorOutdoor,
+      skillLevel: r.skillLevel,
+      tags: JSON.parse(r.tags) as string[],
+      sourceUrl: r.sourceUrl,
+      providerName: r.providerName,
+    }));
   } catch {}
+  if (related.length < 3) {
+    const seedRelated = SEED_ACTIVITIES.filter(
+      (s) => s.title !== a.title && (s.category === a.category || s.indoorOutdoor === a.indoorOutdoor),
+    )
+      .slice(0, 3 - related.length)
+      .map((s) => toResolvedSeed(s));
+    related = [...related, ...seedRelated];
+  }
 
   return (
     <div className="container py-8 sm:py-12">
@@ -59,17 +116,30 @@ export default async function ActivityPage({ params }: { params: { id: string } 
         <Icon name="arrowLeft" size={14} /> Back to results
       </Link>
 
-      <article className="mt-4 grid lg:grid-cols-[1fr_320px] gap-6 lg:gap-10">
+      <article className="mt-4 grid lg:grid-cols-[1fr_340px] gap-6 lg:gap-10">
         {/* Main column */}
         <div className="animate-fade-up">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={accent.tone} icon={accent.icon}>{CATEGORY_LABELS[a.category] ?? a.category}</Badge>
-            {tags.slice(0, 3).map((t) => (
+            {tags.slice(0, 4).map((t) => (
               <Badge key={t} tone="ink">{INTEREST_LABELS[t]?.label ?? t}</Badge>
             ))}
           </div>
 
           <h1 className="mt-4 text-display-2xl tracking-tight">{a.title}</h1>
+
+          {/* Primary CTA — goes to source if available, else "search" */}
+          {a.sourceUrl && (
+            <a
+              href={a.sourceUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="mt-6 inline-flex items-center gap-2 h-14 px-6 rounded-full bg-coral-500 text-white text-base font-bold hover:bg-coral-600 shadow-soft active:scale-[0.98] transition"
+            >
+              <Icon name="arrowUpRight" size={18} />
+              Open {a.providerName ?? 'source site'}
+            </a>
+          )}
 
           <p className="mt-5 text-lg text-ink-700 dark:text-ink-300 leading-relaxed whitespace-pre-line">
             {a.description}
@@ -91,7 +161,7 @@ export default async function ActivityPage({ params }: { params: { id: string } 
           </div>
         </div>
 
-        {/* Sidebar — info card */}
+        {/* Sidebar */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="card p-5 shadow-lift animate-fade-up">
             <h2 className="text-xs uppercase tracking-wider text-ink-500 font-semibold">At a glance</h2>
@@ -105,7 +175,6 @@ export default async function ActivityPage({ params }: { params: { id: string } 
             </dl>
 
             <div className="mt-5 pt-5 border-t border-ink-100 dark:border-ink-800 hidden lg:flex flex-col gap-2">
-              <SaveButton activityId={a.id} />
               {a.sourceUrl && (
                 <a
                   href={a.sourceUrl}
@@ -113,9 +182,10 @@ export default async function ActivityPage({ params }: { params: { id: string } 
                   rel="noreferrer noopener"
                   className="inline-flex items-center justify-center h-12 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft"
                 >
-                  Visit source <Icon name="externalLink" size={15} className="ml-2" />
+                  Open source site <Icon name="externalLink" size={15} className="ml-2" />
                 </a>
               )}
+              <SaveButton activityId={a.id} fullWidth />
               {a.providerName && (
                 <p className="text-center text-xs text-ink-500 mt-1">Provided by {a.providerName}</p>
               )}
@@ -124,7 +194,6 @@ export default async function ActivityPage({ params }: { params: { id: string } 
         </aside>
       </article>
 
-      {/* Related */}
       {related.length > 0 && (
         <section className="mt-16">
           <div className="flex items-end justify-between mb-4">

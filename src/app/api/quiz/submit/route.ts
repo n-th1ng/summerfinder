@@ -4,6 +4,7 @@ import { getOrCreateSessionId, createSessionCookie } from '@/lib/session';
 import type { QuizAnswers } from '@/lib/quiz-config';
 import { rankActivities, type ScoredActivity } from '@/lib/scoring';
 import { SEED_ACTIVITIES } from '@/lib/seed-data';
+import { seedActivityId, toResolvedSeed } from '@/lib/seed-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,23 +95,7 @@ export async function POST(req: Request) {
   }
 
   if (activities.length === 0) {
-    activities = SEED_ACTIVITIES.map((a) => ({
-      id: `seed-${a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`,
-      title: a.title,
-      description: a.description,
-      category: a.category,
-      ageMin: a.ageMin,
-      ageMax: a.ageMax,
-      locationType: a.locationType as any,
-      city: a.city ?? null,
-      cost: a.cost as any,
-      duration: a.duration as any,
-      indoorOutdoor: a.indoorOutdoor as any,
-      skillLevel: a.skillLevel as any,
-      tags: a.tags,
-      sourceUrl: a.sourceUrl ?? null,
-      providerName: a.providerName ?? null,
-    }));
+    activities = SEED_ACTIVITIES.map((a) => toResolvedSeed(a));
   }
 
   const ranked: ScoredActivity[] = rankActivities(activities as ScoredActivity[], body, city ?? undefined).slice(0, 60);

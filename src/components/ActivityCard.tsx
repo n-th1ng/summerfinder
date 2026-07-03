@@ -108,17 +108,17 @@ export function ActivityCard({
       </div>
 
       <div className="flex items-center justify-between border-t border-ink-100 dark:border-ink-800 px-5 py-3 relative">
-        <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400">
+        <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400 min-w-0">
           <Icon name={activity.indoorOutdoor === 'outdoor' ? 'mountain' : activity.indoorOutdoor === 'indoor' ? 'house' : 'shapes'} size={13} />
-          {INDOOR_OUTDOOR_LABELS[activity.indoorOutdoor]}
+          <span className="truncate">{INDOOR_OUTDOOR_LABELS[activity.indoorOutdoor]}</span>
           {activity.city && (
             <>
               <span aria-hidden>·</span>
-              <span className="truncate max-w-[8rem]">{activity.city}</span>
+              <span className="truncate max-w-[6rem]">{activity.city}</span>
             </>
           )}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={toggleSave}
@@ -133,12 +133,32 @@ export function ActivityCard({
           >
             <Icon name={saved ? 'bookmarkFilled' : 'bookmark'} size={15} />
           </button>
+          {activity.sourceUrl ? (
+            <a
+              href={activity.sourceUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-coral-500 text-white text-xs font-semibold hover:bg-coral-600 shadow-soft"
+            >
+              Open <Icon name="arrowUpRight" size={12} />
+            </a>
+          ) : (
+            <Link
+              href={`/activity/${activity.id}`}
+              aria-label="Open activity"
+              className="inline-flex items-center justify-center h-9 px-3 rounded-full bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
+            >
+              Open <Icon name="arrowRight" size={13} className="ml-1" />
+            </Link>
+          )}
           <Link
             href={`/activity/${activity.id}`}
-            aria-label="Open activity"
-            className="inline-flex items-center justify-center h-9 px-3 rounded-full bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100"
+            aria-label="View details"
+            title="View details"
+            className="hidden sm:inline-flex items-center justify-center h-9 w-9 rounded-full bg-ink-100 text-ink-700 ring-1 ring-inset ring-ink-200 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-100 dark:ring-ink-700 dark:hover:bg-ink-700"
           >
-            Open <Icon name="arrowRight" size={13} className="ml-1" />
+            <Icon name="arrowRight" size={14} />
           </Link>
         </div>
       </div>

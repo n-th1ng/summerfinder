@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { rankActivities, type ScoredActivity } from '@/lib/scoring';
 import { SEED_ACTIVITIES } from '@/lib/seed-data';
+import { seedActivityId, toResolvedSeed } from '@/lib/seed-helpers';
 import { Button } from '@/components/ui/Button';
 import { ActivityCard } from '@/components/ActivityCard';
 import { Badge } from '@/components/ui/Badge';
@@ -24,9 +25,9 @@ export default async function HomePage() {
     totalCount = await prisma.activity.count({ where: { isActive: true, isApproved: true } });
     source = 'database';
   } catch {
-    // DB unavailable \u2014 use static seed
-    featured = SEED_ACTIVITIES.slice(0, 12).map((a, i) => ({
-      id: `seed-${i}-${a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)}`,
+    // DB unavailable — use static seed
+    featured = SEED_ACTIVITIES.slice(0, 12).map((a) => ({
+      id: seedActivityId(a),
       title: a.title,
       description: a.description,
       category: a.category,

@@ -6,6 +6,7 @@ import {
   type ScoredActivity,
 } from '@/lib/scoring';
 import { SEED_ACTIVITIES } from '@/lib/seed-data';
+import { seedActivityId } from '@/lib/seed-helpers';
 import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +18,8 @@ export default async function BoredPage() {
       where: { isActive: true, isApproved: true },
     });
   } catch {
-    activities = SEED_ACTIVITIES.map((a, i) => ({
-      id: `seed-${i}-${a.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)}`,
+    activities = SEED_ACTIVITIES.map((a) => ({
+      id: seedActivityId(a),
       title: a.title,
       description: a.description,
       category: a.category,
