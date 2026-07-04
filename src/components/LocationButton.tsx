@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
 
 type Status = 'idle' | 'requesting' | 'success' | 'denied' | 'error';
@@ -15,34 +15,21 @@ export type ResolvedLocation = {
 };
 
 type Props = {
-  /** Called with the resolved city + coords when the user grants permission. */
   onResolved: (loc: ResolvedLocation) => void;
-  /** Optional pre-filled city (e.g. from session). */
   initialCity?: string;
-  /** Layout variant. */
-  variant?: 'card' | 'inline';
 };
 
-const labelByStatus: Record<Status, string> = {
-  idle: 'Use my location',
-  requesting: 'Finding you\u2026',
-  success: 'Location set',
-  denied: 'Permission denied \u2014 type your city instead',
-  error: 'Couldn\u2019t get location \u2014 type your city instead',
-};
-
-export function LocationButton({ onResolved, initialCity, variant = 'card' }: Props) {
-  const [status, setStatus] = useState<Status>('idle');
+export function LocationButton({ onResolved, initialCity }: Props) {
+  const [status, setStatus] = useState<Status>('requesting');
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  async function requestLocation() {
+  useEffect(() => {
     if (typeof window === 'undefined' || !('geolocation' in navigator)) {
       setStatus('error');
       setErrMsg('Your browser doesn\u2019t support location');
       return;
     }
-    setStatus('requesting');
-    setErrMsg(null);
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -80,50 +67,53 @@ export function LocationButton({ onResolved, initialCity, variant = 'card' }: Pr
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
     );
-  }
-
-  if (variant === 'inline') {
-    return (
-      <button
-        type="button"
-        onClick={requestLocation}
-        disabled={status === 'requesting'}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-coral-600 dark:text-coral-400 hover:underline disabled:opacity-50"
-      >
-        <Icon name="mapPin" size={15} />
-        {status === 'requesting' ? 'Finding you\u2026' : initialCity ? `Use ${initialCity}` : 'Use my location'}
-      </button>
-    );
-  }
+  }, []);
 
   return (
-    <div className="rounded-2xl border-2 border-dashed border-coral-300 dark:border-coral-400/30 bg-coral-50/40 dark:bg-coral-500/5 p-4">
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-coral-500 text-white shadow-soft">
-          <Icon name="mapPin" size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold text-ink-900 dark:text-ink-50">
-            We need your location
-          </p>
-          <p className="text-sm text-ink-600 dark:text-ink-300 mt-0.5">
-            Your browser will ask for permission. We use your location only to find
-            nearby activities. We never store your exact coordinates.
-          </p>
-          <button
-            type="button"
-            onClick={requestLocation}
-            disabled={status === 'requesting'}
-            className="mt-3 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-coral-500 text-white font-semibold hover:bg-coral-600 shadow-soft active:scale-95 transition disabled:opacity-50"
-          >
-            <Icon name={status === 'requesting' ? 'sunBright' : 'mapPin'} size={16} className={status === 'requesting' ? 'animate-spin' : ''} />
-            {labelByStatus[status]}
-          </button>
-          {errMsg && (
-            <p className="mt-2 text-xs text-ink-500 dark:text-ink-400">{errMsg}</p>
-          )}
-        </div>
+    <div className="flex flex-col items-center gap-4 py-6">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-coral-100 dark:bg-coral-500/15 text-coral-500">
+        <Icon
+          name={status === 'requesting' ? 'sunBright' : status === 'success' ? 'check' : 'mapPin'}
+          size={28}
+          className={status === 'requesting' ? 'animate-spin' : ''}
+        />
       </div>
+
+      {status === 'requesting' && (
+        <div className="text-center">
+          <p className="font-semibold text-ink-900 dark:text-ink-50">Requesting location access\u2026</p>
+          <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
+            Your browser is asking for permission.
+          </p>
+        </div>
+      )}
+
+      {status === 'success' && (
+        <div className="text-center">
+          <p className="font-semibold text-emerald-600 dark:text-emerald-400">Location found!</p>
+          <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
+            We&apos;ll use this to find activities near you.
+          </p>
+        </div>
+      )}
+
+      {status === 'denied' && (
+        <div className="text-center">
+          <p className="font-semibold text-ink-900 dark:text-ink-500">Permission denied</p>
+          <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
+            No worries — you can still take the quiz. We&apos;ll show activities from everywhere.
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="text-center">
+          <p className="font-semibold text-ink-900 dark:text-ink-500">Couldn&apos;t get location</p>
+          <p className="text-sm text-ink-500 dark:text-ink-400 mt-1">
+            {errMsg || 'Something went wrong.'} You can still take the quiz.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

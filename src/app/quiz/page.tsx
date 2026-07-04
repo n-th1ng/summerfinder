@@ -14,7 +14,7 @@ const CITY_KEY = 'sf-quiz-city';
 
 const OPTION_ICONS: Record<string, IconName> = {
   '10-12': 'sparkles', '12-14': 'star', '14-16': 'zap', '16-18': 'rocket',
-  'near_me': 'mapPin', 'anywhere': 'globe', us: 'compass', uk: 'globe', ca: 'globe', in: 'globe', au: 'globe',
+  'near_me': 'mapPin',
   '30min': 'clock', '1-2hr': 'clock', 'half-day': 'sunBright', 'multi-day': 'calendar', ongoing: 'calendar',
   free: 'sparkles', low: 'thumbsUp', paid: 'zap',
   indoor: 'house', outdoor: 'mountain', both: 'shapes',
@@ -65,11 +65,8 @@ export default function QuizPage() {
 
   function handleLocationResolved(loc: ResolvedLocation) {
     setCity(loc);
-    // If the user is on the location step, auto-advance after a beat.
-    if (current.id === 'location') {
-      setAnswer('near_me');
-      setTimeout(() => next(), 600);
-    }
+    setAnswer('near_me');
+    setTimeout(() => next(), 800);
   }
 
   async function submit() {
@@ -152,43 +149,28 @@ export default function QuizPage() {
                 onResolved={handleLocationResolved}
                 initialCity={city?.city}
               />
-              {city && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-400/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-400/30 px-3 py-1.5 text-sm font-semibold">
-                  <Icon name="check" size={14} />
-                  {city.city}
-                  {city.region ? `, ${city.region}` : ''}
-                  {city.country ? `, ${city.country}` : ''}
-                </div>
-              )}
-              <div className="mt-8 flex items-center gap-3">
-                <div className="flex-1 h-px bg-ink-200 dark:bg-ink-700" />
-                <span className="text-xs uppercase tracking-wider text-ink-500 dark:text-ink-400 font-semibold">
-                  or pick a region
-                </span>
-                <div className="flex-1 h-px bg-ink-200 dark:bg-ink-700" />
-              </div>
             </div>
           )}
 
-          <div className={`grid gap-3 sm:gap-4 ${
-            isLocationStep ? 'mt-4' : 'mt-10'
-          } ${
-            current.multi || current.options.length > 6
-              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
-              : 'grid-cols-2 sm:grid-cols-3'
-          }`}>
-            {current.options.map((opt, i) => (
-              <OptionCard
-                key={opt.id}
-                opt={opt}
-                index={i}
-                selected={current.multi
-                  ? Array.isArray(currentValue) && currentValue.includes(opt.id)
-                  : currentValue === opt.id}
-                onClick={() => (current.multi ? toggleMulti(opt.id) : setAnswer(opt.id))}
-              />
-            ))}
-          </div>
+          {!isLocationStep && (
+            <div className={`grid gap-3 sm:gap-4 mt-10 ${
+              current.multi || current.options.length > 6
+                ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+                : 'grid-cols-2 sm:grid-cols-3'
+            }`}>
+              {current.options.map((opt, i) => (
+                <OptionCard
+                  key={opt.id}
+                  opt={opt}
+                  index={i}
+                  selected={current.multi
+                    ? Array.isArray(currentValue) && currentValue.includes(opt.id)
+                    : currentValue === opt.id}
+                  onClick={() => (current.multi ? toggleMulti(opt.id) : setAnswer(opt.id))}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -199,7 +181,7 @@ export default function QuizPage() {
             Back
           </Button>
           <div className="flex-1 text-center text-xs text-ink-500 dark:text-ink-400 hidden sm:block">
-            {current.multi ? 'Tap as many as you like' : isLocationStep ? 'Or skip and pick a region' : 'Tap to choose'}
+            {current.multi ? 'Tap as many as you like' : isLocationStep ? 'We need your location' : 'Tap to choose'}
           </div>
           <Button
             iconRight={step === total - 1 ? 'sparkles' : 'arrowRight'}

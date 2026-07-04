@@ -43,15 +43,9 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 'location',
     title: 'Where are you?',
-    subtitle: 'We use your city or area only to find activities nearby.',
+    subtitle: 'We need your location to find activities near you.',
     options: [
-      { id: 'near_me', label: 'Near me', emoji: '📍', description: 'Use my city if I shared it' },
-      { id: 'anywhere', label: 'Anywhere online', emoji: '🌐', description: 'Online or remote is fine' },
-      { id: 'us', label: 'United States', emoji: '🇺🇸' },
-      { id: 'uk', label: 'United Kingdom', emoji: '🇬🇧' },
-      { id: 'ca', label: 'Canada', emoji: '🇨🇦' },
-      { id: 'in', label: 'India', emoji: '🇮🇳' },
-      { id: 'au', label: 'Australia', emoji: '🇦🇺' },
+      { id: 'near_me', label: 'Access Location', emoji: '📍' },
     ],
   },
   {
