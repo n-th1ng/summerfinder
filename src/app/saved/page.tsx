@@ -46,7 +46,7 @@ export default async function SavedPage() {
 
   return (
     <div className="container py-10 sm:py-14">
-      <div className="flex flex-wrap items-end justify-between gap-3 mb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-8 px-1">
         <div>
           <p className="text-xs uppercase tracking-wider text-coral-600 dark:text-coral-400 font-semibold">Your bookmarks</p>
           <h1 className="mt-1 text-display-lg">Saved activities</h1>
