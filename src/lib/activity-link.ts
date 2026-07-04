@@ -79,22 +79,11 @@ export function getActivityLink(activity: Resolved): {
     : `${baseTitle} ${cat}`.trim();
 
   let query: string;
-  if (activity.city && activity.locationType === 'city') {
-    // Local activity: "Title City"
-    const cityOnly = activity.city
-      .replace(/,?\s*(United States|USA|US|UK|Canada|CA|America)$/i, '')
-      .trim();
-    query = `${base} ${cityOnly}`;
-  } else {
-    // No specific city: "Title near me"
-    query = `${base} near me`;
-  }
+  query = `${base} near me`;
 
   return {
     url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-    label: activity.city
-      ? `Search for this in ${activity.city.split(',')[0]}`
-      : 'Search Google',
+    label: 'Search Google',
     isSearch: true,
   };
 }
