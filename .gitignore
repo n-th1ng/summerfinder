@@ -36,4 +36,8 @@ yarn-error.log*
 next-env.d.ts
 .env*
 .data/
-dev.db
+
+# database files
+*.db
+*.db-shm
+*.db-wal
