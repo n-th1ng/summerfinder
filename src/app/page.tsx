@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
+import { getTursoClient } from '@/lib/turso';
 import { rankActivities, type ScoredActivity } from '@/lib/scoring';
 import { SEED_ACTIVITIES } from '@/lib/seed-data';
 import { seedActivityId, toResolvedSeed } from '@/lib/seed-helpers';
@@ -17,15 +17,26 @@ export default async function HomePage() {
   let source: 'database' | 'seed' = 'seed';
 
   let featured: any[] = [];
-  try {
-    featured = await prisma.activity.findMany({
-      where: { isActive: true, isApproved: true },
-      take: 12,
-    });
-    totalCount = await prisma.activity.count({ where: { isActive: true, isApproved: true } });
-    source = 'database';
-  } catch {
-    // DB unavailable — use static seed
+  const turso = getTursoClient();
+  if (turso) {
+    try {
+      const result = await turso.execute({
+        sql: `SELECT * FROM Activity WHERE isActive = 1 AND isApproved = 1 LIMIT 12`,
+        args: [],
+      });
+      featured = result.rows;
+      const countResult = await turso.execute({
+        sql: `SELECT COUNT(*) as cnt FROM Activity WHERE isActive = 1 AND isApproved = 1`,
+        args: [],
+      });
+      totalCount = Number(countResult.rows[0]?.cnt ?? 0);
+      source = 'database';
+    } catch {
+      // fall through to seed
+    }
+  }
+
+  if (featured.length === 0) {
     featured = SEED_ACTIVITIES.slice(0, 12).map((a) => ({
       id: seedActivityId(a),
       title: a.title,

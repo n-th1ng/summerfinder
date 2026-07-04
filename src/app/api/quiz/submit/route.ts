@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { getTursoClient } from '@/lib/turso';
 import { ok, fail } from '@/lib/api';
 import { getOrCreateSessionId, createSessionCookie } from '@/lib/session';
 import type { QuizAnswers } from '@/lib/quiz-config';
@@ -42,56 +42,65 @@ export async function POST(req: Request) {
 
   const city = (body.userCity ?? '').trim() || null;
 
-  // Try to persist quiz + fetch DB activities. If DB is unavailable,
-  // fall back to the static seed so the app still works (and log the
-  // quiz to the server console for analytics).
   type RawActivity = Omit<ScoredActivity, 'score' | 'reasons'>;
   let activities: RawActivity[] = [];
   let quizId: string | null = null;
   let source: 'database' | 'seed' = 'seed';
 
-  try {
-    const quiz = await prisma.quizResponse.create({
-      data: {
-        sessionId,
-        ageGroup: body.ageGroup!,
-        city: city ?? '',
-        timeCommitment: body.timeCommitment!,
-        budget: body.budget!,
-        preference: body.preference!,
-        mood: body.mood!,
-        interests: JSON.stringify(body.interests),
-        skillLevel: body.skillLevel!,
-      },
-    });
-    quizId = quiz.id;
-    await prisma.usageEvent.create({
-      data: { kind: 'quiz_submit', sessionId, payload: JSON.stringify({ quizId: quiz.id }) },
-    });
+  const turso = getTursoClient();
+  if (turso) {
+    try {
+      const quizIdResult = await turso.execute({
+        sql: `INSERT INTO QuizResponse (id, sessionId, ageGroup, city, timeCommitment, budget, preference, mood, interests, skillLevel, createdAt)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+              RETURNING id`,
+        args: [
+          crypto.randomUUID(),
+          sessionId,
+          body.ageGroup!,
+          city ?? '',
+          body.timeCommitment!,
+          body.budget!,
+          body.preference!,
+          body.mood!,
+          JSON.stringify(body.interests),
+          body.skillLevel!,
+        ],
+      });
+      quizId = quizIdResult.rows[0]?.id as string | null;
 
-    const dbActivities = await prisma.activity.findMany({
-      where: { isActive: true, isApproved: true },
-    });
-    activities = dbActivities.map((a) => ({
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      category: a.category,
-      ageMin: a.ageMin,
-      ageMax: a.ageMax,
-      locationType: a.locationType as any,
-      city: a.city,
-      cost: a.cost as any,
-      duration: a.duration as any,
-      indoorOutdoor: a.indoorOutdoor as any,
-      skillLevel: a.skillLevel as any,
-      tags: JSON.parse(a.tags) as string[],
-      sourceUrl: a.sourceUrl,
-      providerName: a.providerName,
-    }));
-    source = 'database';
-  } catch (err: any) {
-    console.log('DB unavailable \u2014 using static seed for quiz:', sessionId);
+      await turso.execute({
+        sql: `INSERT INTO UsageEvent (id, kind, payload, sessionId, createdAt)
+              VALUES (?, 'quiz_submit', ?, ?, datetime('now'))`,
+        args: [crypto.randomUUID(), JSON.stringify({ quizId }), sessionId],
+      });
+
+      const dbResult = await turso.execute({
+        sql: `SELECT * FROM Activity WHERE isActive = 1 AND isApproved = 1`,
+        args: [],
+      });
+
+      activities = dbResult.rows.map((a) => ({
+        id: a.id as string,
+        title: a.title as string,
+        description: a.description as string,
+        category: a.category as string,
+        ageMin: a.ageMin as number,
+        ageMax: a.ageMax as number,
+        locationType: a.locationType as any,
+        city: (a.city as string) ?? null,
+        cost: a.cost as any,
+        duration: a.duration as any,
+        indoorOutdoor: a.indoorOutdoor as any,
+        skillLevel: a.skillLevel as any,
+        tags: JSON.parse(a.tags as string) as string[],
+        sourceUrl: (a.sourceUrl as string) ?? null,
+        providerName: (a.providerName as string) ?? null,
+      }));
+      source = 'database';
+    } catch (err: any) {
+      console.log('Turso query failed:', err?.message ?? err);
+    }
   }
 
   if (activities.length === 0) {
