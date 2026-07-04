@@ -38,6 +38,8 @@ model QuizResponse {
   mood           String
   interests      String   // JSON array of tag slugs
   skillLevel     String
+  latitude       Float?
+  longitude      Float?
   createdAt      DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)

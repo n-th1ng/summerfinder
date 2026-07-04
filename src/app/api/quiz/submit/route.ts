@@ -51,8 +51,8 @@ export async function POST(req: Request) {
   if (turso) {
     try {
       const quizIdResult = await turso.execute({
-        sql: `INSERT INTO QuizResponse (id, sessionId, ageGroup, city, timeCommitment, budget, preference, mood, interests, skillLevel, createdAt)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        sql: `INSERT INTO QuizResponse (id, sessionId, ageGroup, city, timeCommitment, budget, preference, mood, interests, skillLevel, latitude, longitude, createdAt)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               RETURNING id`,
         args: [
           crypto.randomUUID(),
@@ -65,6 +65,8 @@ export async function POST(req: Request) {
           body.mood!,
           JSON.stringify(body.interests),
           body.skillLevel!,
+          body.userLat ?? null,
+          body.userLng ?? null,
         ],
       });
       quizId = quizIdResult.rows[0]?.id as string | null;
